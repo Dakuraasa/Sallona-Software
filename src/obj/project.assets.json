@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\drasd\\OneDrive\\Documentos\\TRABALHOS\\SALOONA\\dashboard\\dashboardforms\\dashboardforms.csproj",
+      "projectUniqueName": "C:\\Users\\drasd\\OneDrive\\Documentos\\TRABALHOS\\alterações\\src\\dashboardforms.csproj",
       "projectName": "dashboardforms",
-      "projectPath": "C:\\Users\\drasd\\OneDrive\\Documentos\\TRABALHOS\\SALOONA\\dashboard\\dashboardforms\\dashboardforms.csproj",
+      "projectPath": "C:\\Users\\drasd\\OneDrive\\Documentos\\TRABALHOS\\alterações\\src\\dashboardforms.csproj",
       "packagesPath": "C:\\Users\\drasd\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\drasd\\OneDrive\\Documentos\\TRABALHOS\\SALOONA\\dashboard\\dashboardforms\\obj\\",
+      "outputPath": "C:\\Users\\drasd\\OneDrive\\Documentos\\TRABALHOS\\alterações\\src\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
