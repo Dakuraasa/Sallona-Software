@@ -30,6 +30,10 @@ public class DashboardForm : Form
     readonly Dictionary<string, Button> botoesMenu = new();
     readonly DataTable tabela = new();
 
+    // Área onde as páginas são trocadas quando se clica no menu
+    readonly Panel areaPaginas = new() { Dock = DockStyle.Fill, BackColor = Cores.Fundo };
+    readonly Dictionary<string, Control> paginas = new();
+
     public DashboardForm()
     {
         Text = "Sallona - Dashboard";
@@ -40,11 +44,12 @@ public class DashboardForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         DoubleBuffered = true;
 
-        Controls.Add(ConstruirConteudo());
+        paginas["Dashboard"] = ConstruirConteudo();
+        Controls.Add(areaPaginas);
         Controls.Add(ConstruirSidebar());
 
         AplicarPeriodo("Mês");
-        MarcarMenu("Dashboard");
+        MostrarPagina("Dashboard");
     }
 
     Control ConstruirSidebar()
@@ -57,7 +62,7 @@ public class DashboardForm : Form
 
         var menu = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 8 * 44 + 8, FlowDirection = FlowDirection.TopDown, WrapContents = false };
         foreach (var (icone, nome) in new[] { ("📊", "Dashboard"), ("👥", "Clientes"), ("✂", "Serviços"), ("💇", "Profissionais"),
-                                              ("💰", "Financeiro"), ("📦", "Estoque"), ("🛍", "Produtos"), ("📈", "Relatórios") })
+                                              ("💰", "Financeiro"), ("📦", "Estoque"), ("🛍", "Produtos"), ("📖", "Agenda") })
             menu.Controls.Add(NovoBotaoMenu(icone, nome));
 
         var meta = new Card { Dock = DockStyle.Bottom, Height = 120, Preenchimento = Cores.Escuro, Margin = new Padding(0) };
@@ -98,7 +103,7 @@ public class DashboardForm : Form
         b.Click += (_, _) =>
         {
             if (nome == "Sair") { Close(); return; }
-            MarcarMenu(nome);
+            MostrarPagina(nome);
             Navegar?.Invoke(nome);
         };
         botoesMenu[nome] = b;
@@ -114,6 +119,63 @@ public class DashboardForm : Form
             b.ForeColor = ativo ? Color.White : Cores.Texto;
             b.FlatAppearance.MouseOverBackColor = ativo ? Cores.Escuro : Cores.Fundo;
         }
+    }
+
+    // ---------- Navegação entre páginas ----------
+    void MostrarPagina(string nome)
+    {
+        if (!paginas.TryGetValue(nome, out var pagina))
+        {
+            // As páginas são criadas só na primeira vez que são abertas
+            pagina = nome switch
+            {
+                "Serviços" => new ServicosPage { Dock = DockStyle.Fill },
+                _ => PaginaEmBreve(nome)   // páginas que outros membros do grupo ainda vão fazer
+            };
+            paginas[nome] = pagina;
+        }
+
+        areaPaginas.SuspendLayout();
+        areaPaginas.Controls.Clear();
+        areaPaginas.Controls.Add(pagina);
+        areaPaginas.ResumeLayout();
+
+        Text = $"Sallona - {nome}";
+        MarcarMenu(nome);
+    }
+
+    static Control PaginaEmBreve(string nome)
+    {
+        var fundo = new Panel { Dock = DockStyle.Fill, BackColor = Cores.Fundo, Padding = new Padding(20, 16, 20, 16) };
+        var titulo = new Label { Text = nome, Font = new Font("Segoe UI", 20f, FontStyle.Bold), ForeColor = Cores.Escuro, AutoSize = true, Location = new Point(20, 24) };
+
+        var card = new Card { Size = new Size(420, 180), Padding = new Padding(24) };
+        var msg = new Label
+        {
+            Text = "Esta página ainda está em desenvolvimento.",
+            Dock = DockStyle.Fill,
+            ForeColor = Cores.Cinza,
+            BackColor = Color.Transparent,
+            TextAlign = ContentAlignment.TopCenter,
+            Font = new Font("Segoe UI", 10f)
+        };
+        var cabecalho = new Label
+        {
+            Text = "Em breve",
+            Dock = DockStyle.Top,
+            Height = 64,
+            ForeColor = Cores.Primaria,
+            BackColor = Color.Transparent,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Font = new Font("Segoe UI", 16f, FontStyle.Bold)
+        };
+        card.Controls.Add(msg);
+        card.Controls.Add(cabecalho);
+
+        fundo.Controls.Add(titulo);
+        fundo.Controls.Add(card);
+        fundo.Resize += (_, _) => card.Location = new Point((fundo.Width - card.Width) / 2, (fundo.Height - card.Height) / 2);
+        return fundo;
     }
 
     // ---------- Conteúdo ----------
