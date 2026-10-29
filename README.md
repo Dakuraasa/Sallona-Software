@@ -1,3 +1,3 @@
 <p align="center">
-  <img src="logo.jpeg" alt="Logo Sallona Software">
+  <img src="logo.jpg" alt="Logo Sallona Software">
 </p>
