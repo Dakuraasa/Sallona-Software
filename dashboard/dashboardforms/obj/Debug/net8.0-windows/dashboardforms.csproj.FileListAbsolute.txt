@@ -1,0 +1,15 @@
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\bin\Debug\net8.0-windows\dashboardforms.exe
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\bin\Debug\net8.0-windows\logo.jpg
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\bin\Debug\net8.0-windows\dashboardforms.deps.json
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\bin\Debug\net8.0-windows\dashboardforms.runtimeconfig.json
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\bin\Debug\net8.0-windows\dashboardforms.dll
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\bin\Debug\net8.0-windows\dashboardforms.pdb
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\obj\Debug\net8.0-windows\dashboardforms.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\obj\Debug\net8.0-windows\dashboardforms.AssemblyInfoInputs.cache
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\obj\Debug\net8.0-windows\dashboardforms.AssemblyInfo.cs
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\obj\Debug\net8.0-windows\dashboardforms.csproj.CoreCompileInputs.cache
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\obj\Debug\net8.0-windows\dashboardforms.dll
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\obj\Debug\net8.0-windows\refint\dashboardforms.dll
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\obj\Debug\net8.0-windows\dashboardforms.pdb
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\obj\Debug\net8.0-windows\dashboardforms.genruntimeconfig.cache
+C:\Users\drasd\OneDrive\Documentos\TRABALHOS\SALOONA\dashboard\dashboardforms\obj\Debug\net8.0-windows\ref\dashboardforms.dll
