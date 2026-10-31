@@ -1,4 +1,5 @@
-﻿using dashboardforms;
+﻿using System.Globalization;
+using dashboardforms;
 
 namespace dashboardforms.Agenda;
 
@@ -17,7 +18,15 @@ public partial class FrmAgenda : Form
             CorBorda = Cores.Primaria,
             EspessuraBorda = 2
         };
-        cardCalendario.Controls.Add(new MiniCalendario { Dock = DockStyle.Fill });
+
+        // antes o calendário era criado direto dentro do Add; agora vai para uma variável
+        var calendario = new MiniCalendario { Dock = DockStyle.Fill };
+
+        // TESTE: reage ao evento mostrando a data no título da janela
+        calendario.DataSelecionadaAlterada += (s, e) =>
+            Text = "Agenda — " + calendario.DataSelecionada?.ToString("dddd, dd/MM/yyyy", new CultureInfo("pt-BR"));
+
+        cardCalendario.Controls.Add(calendario);
         Controls.Add(cardCalendario);
     }
 
