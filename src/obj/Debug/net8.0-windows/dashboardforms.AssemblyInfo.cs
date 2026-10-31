@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("dashboardforms")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f9536e572c9b40f60eb33aa5637265a373898daa")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f04f0f04a4b62c368042df0f54e54afde0b7bedc")]
 [assembly: System.Reflection.AssemblyProductAttribute("dashboardforms")]
 [assembly: System.Reflection.AssemblyTitleAttribute("dashboardforms")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
