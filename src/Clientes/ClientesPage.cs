@@ -1,0 +1,503 @@
+﻿using System.Drawing.Drawing2D;
+
+namespace dashboardforms.Clientes; 
+
+
+public class ClientesPage : UserControl
+{
+    // ---------- paleta (ajuste se alguma cor ficar diferente do protótipo) ----------
+    static readonly Color Primaria = Cores.Primaria;
+    static readonly Color Texto = Color.FromArgb(43, 42, 76);
+    static readonly Color Suave = Color.FromArgb(120, 118, 135);
+    static readonly Color Borda = Color.FromArgb(232, 226, 223);
+    static readonly Color RosaClaro = Color.FromArgb(246, 232, 237);
+    static readonly Color AvatarFundo = Color.FromArgb(243, 220, 228);
+
+    const int PorPagina = 6;
+
+    record Cliente(string Nome, string Telefone, string? Email, DateTime? UltimaVisita);
+
+    // dados de exemplo: depois troque pelo seu banco / DAO
+    readonly List<Cliente> todos = new()
+    {
+        new("Maria Souza", "(27) 99999-0001", null, new DateTime(2026, 10, 14)),
+        new("Paulo Andre", "(27) 99999-0002", null, new DateTime(2026, 10, 15)),
+        new("Cleusa Maria", "(27) 99999-0003", null, new DateTime(2026, 10, 16)),
+        new("Pedro Henrique", "(27) 99999-0004", null, new DateTime(2026, 10, 17)),
+    };
+
+    Cliente? selecionado;
+    bool ordemAZ = true;
+    int filtroVisita;      
+    int pagina = 1;
+    int totalPaginas = 1;
+
+    readonly TextBox busca = new();
+    readonly Panel linhas = new() { Dock = DockStyle.Fill, BackColor = Color.White };
+    readonly Label lblBadge = new(), lblMostrando = new(), lblPagina = new();
+    readonly Label lblNome = new(), lblTelefone = new(), lblEmail = new(), lblVisita = new(), lblPillVisita = new();
+    readonly AvatarIniciais avatarFicha = new() { Size = new Size(64, 64), BackColor = Color.White };
+    Caixa ordenar = null!;
+
+    public ClientesPage()
+    {
+        Dock = DockStyle.Fill;
+        BackColor = Cores.Fundo;
+        Padding = new Padding(36, 28, 36, 12);
+        DoubleBuffered = true;
+
+        var conteudo = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 0, 0, 16) };
+        conteudo.Controls.Add(ConstruirLista());   
+        conteudo.Controls.Add(ConstruirFicha());   
+
+        Controls.Add(conteudo);
+        Controls.Add(ConstruirRodape());
+        Controls.Add(ConstruirBarra());
+        Controls.Add(ConstruirCabecalho());        
+
+        Aplicar();
+    }
+
+    // ================= cabeçalho =================
+    Control ConstruirCabecalho()
+    {
+        var p = new Panel { Dock = DockStyle.Top, Height = 124 };
+
+        var textos = new Panel { Dock = DockStyle.Fill };
+        textos.Controls.Add(Rotulo("RELAÇÕES QUE FLORESCEM", 7.5f, FontStyle.Bold, Primaria, 0, 2));
+        textos.Controls.Add(Rotulo("Clientes", 26, FontStyle.Regular, Texto, 0, 18, "Georgia"));
+        textos.Controls.Add(Rotulo("Cada pessoa, uma história. Tenha todos os detalhes por perto.", 9.5f, FontStyle.Regular, Suave, 0, 78));
+
+        var botao = new Button
+        {
+            Text = "＋   Novo cliente",
+            Dock = DockStyle.Top,
+            Height = 46,
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Primaria,
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI Semibold", 10F),
+            Cursor = Cursors.Hand
+        };
+        botao.FlatAppearance.BorderSize = 0;
+        botao.Click += (_, _) => MessageBox.Show("TODO: abrir o cadastro de novo cliente");
+        Formas.Arredondar(botao, 10);
+
+        var direita = new Panel { Dock = DockStyle.Right, Width = 180, Padding = new Padding(0, 8, 0, 0) };
+        direita.Controls.Add(botao);
+
+        p.Controls.Add(textos);
+        p.Controls.Add(direita);
+        return p;
+    }
+
+    Control ConstruirBarra()
+    {
+        var p = new Panel { Dock = DockStyle.Top, Height = 80, Padding = new Padding(0, 0, 0, 34) };
+
+        var caixaBusca = new Caixa { Dock = DockStyle.Fill, Raio = 10 };
+        busca.BorderStyle = BorderStyle.None;
+        busca.Font = new Font("Segoe UI", 10F);
+        busca.BackColor = Color.White;
+        busca.ForeColor = Texto;
+        busca.PlaceholderText = "Buscar por nome ou telefone";
+        busca.Location = new Point(48, 14);
+        busca.TextChanged += (_, _) => { pagina = 1; Aplicar(); };
+        caixaBusca.Resize += (_, _) => busca.Width = Math.Max(50, caixaBusca.Width - 66);
+        caixaBusca.Controls.Add(Rotulo("🔍", 11, FontStyle.Regular, Suave, 16, 11, "Segoe UI Emoji"));
+        caixaBusca.Controls.Add(busca);
+
+        var menu = new ContextMenuStrip();
+        void Opcao(string texto, int valor) =>
+            menu.Items.Add(texto, null, (_, _) => { filtroVisita = valor; pagina = 1; Aplicar(); });
+        Opcao("Todos os clientes", 0);
+        Opcao("Visitaram nos últimos 30 dias", 1);
+        Opcao("Sem visita há mais de 30 dias", 2);
+
+        var filtros = BotaoContorno("⚙   Filtros", c => menu.Show(c, new Point(0, c.Height)));
+        ordenar = BotaoContorno("⇅   Nome: A–Z", _ => { ordemAZ = !ordemAZ; pagina = 1; Aplicar(); });
+
+        var ladoFiltros = new Panel { Dock = DockStyle.Right, Width = 134, Padding = new Padding(14, 0, 0, 0) };
+        ladoFiltros.Controls.Add(filtros);
+        var ladoOrdenar = new Panel { Dock = DockStyle.Right, Width = 164, Padding = new Padding(14, 0, 0, 0) };
+        ladoOrdenar.Controls.Add(ordenar);
+
+        p.Controls.Add(caixaBusca);
+        p.Controls.Add(ladoFiltros);
+        p.Controls.Add(ladoOrdenar);
+        return p;
+    }
+
+    // ================= lista =================
+    Control ConstruirLista()
+    {
+        var card = new Caixa { Dock = DockStyle.Fill, Padding = new Padding(1) };
+
+        var titulo = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            Height = 66,
+            WrapContents = false,
+            Padding = new Padding(24, 20, 0, 0),
+            BackColor = Color.Transparent
+        };
+        var tit = Rotulo("Todos os clientes", 11, FontStyle.Bold, Texto, 0, 0);
+        tit.Margin = new Padding(0, 1, 12, 0);
+        var pill = new Caixa { Raio = 12, Preenchimento = RosaClaro, Borda = RosaClaro, Size = new Size(100, 26), Margin = new Padding(0) };
+        Estilo(lblBadge, 8.5f, FontStyle.Regular, Primaria, 0, 0);
+        lblBadge.AutoSize = false; lblBadge.Dock = DockStyle.Fill; lblBadge.TextAlign = ContentAlignment.MiddleCenter;
+        pill.Controls.Add(lblBadge);
+        titulo.Controls.Add(tit);
+        titulo.Controls.Add(pill);
+
+        var cab = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = Color.FromArgb(247, 243, 241) };
+        cab.Controls.Add(Rotulo("NOME", 7.5f, FontStyle.Bold, Suave, 24, 14));
+        cab.Controls.Add(Rotulo("TELEFONE", 7.5f, FontStyle.Bold, Suave, 238, 14));
+        cab.Controls.Add(Rotulo("ÚLTIMA VISITA", 7.5f, FontStyle.Bold, Suave, 422, 14));
+
+        var rodape = new Panel { Dock = DockStyle.Bottom, Height = 56, BackColor = Color.Transparent };
+        Estilo(lblMostrando, 8.5f, FontStyle.Regular, Suave, 24, 20);
+
+        var anterior = BotaoPagina("‹", () => { if (pagina > 1) { pagina--; Aplicar(); } });
+        var proxima = BotaoPagina("›", () => { if (pagina < totalPaginas) { pagina++; Aplicar(); } });
+        lblPagina.AutoSize = false; lblPagina.Size = new Size(30, 28); lblPagina.Margin = new Padding(0);
+        lblPagina.TextAlign = ContentAlignment.MiddleCenter;
+        lblPagina.BackColor = RosaClaro; lblPagina.ForeColor = Primaria;
+        lblPagina.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+
+        var pag = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Right,
+            Width = 120,
+            WrapContents = false,
+            Padding = new Padding(20, 14, 0, 0),
+            BackColor = Color.Transparent
+        };
+        pag.Controls.Add(anterior);
+        pag.Controls.Add(lblPagina);
+        pag.Controls.Add(proxima);
+        rodape.Controls.Add(lblMostrando);
+        rodape.Controls.Add(pag);
+
+        card.Controls.Add(linhas);
+        card.Controls.Add(rodape);
+        card.Controls.Add(cab);
+        card.Controls.Add(titulo);
+        return card;
+    }
+
+    static Label BotaoPagina(string simbolo, Action aoClicar)
+    {
+        var l = new Label
+        {
+            Text = simbolo,
+            AutoSize = false,
+            Size = new Size(26, 28),
+            Margin = new Padding(0),
+            TextAlign = ContentAlignment.MiddleCenter,
+            ForeColor = Suave,
+            BackColor = Color.Transparent,
+            Font = new Font("Segoe UI", 12F),
+            Cursor = Cursors.Hand
+        };
+        l.Click += (_, _) => aoClicar();
+        return l;
+    }
+
+    Control Linha(Cliente c)
+    {
+        bool sel = c == selecionado;
+        var fundo = sel ? RosaClaro : Color.White;
+
+        var l = new Panel { Dock = DockStyle.Top, Height = 72, BackColor = fundo, Cursor = Cursors.Hand };
+        l.Paint += (_, e) =>
+        {
+            using var caneta = new Pen(Borda);
+            e.Graphics.DrawLine(caneta, 0, l.Height - 1, l.Width, l.Height - 1);
+            if (sel)
+            {
+                using var barra = new SolidBrush(Primaria);
+                e.Graphics.FillRectangle(barra, 0, 0, 3, l.Height - 1);
+            }
+        };
+
+        l.Controls.Add(new AvatarIniciais
+        {
+            Iniciais = Iniciais(c.Nome),
+            Size = new Size(38, 38),
+            Location = new Point(24, 17),
+            BackColor = fundo,
+            Fundo = AvatarFundo,
+            Cor = Primaria
+        });
+        l.Controls.Add(Coluna(c.Nome, 73, 150, true));
+        l.Controls.Add(Coluna(c.Telefone, 238, 170, false));
+        l.Controls.Add(Coluna(c.UltimaVisita?.ToString("dd/MM/yyyy") ?? "—", 422, 130, false));
+        l.Controls.Add(new Label
+        {
+            Text = "›",
+            Dock = DockStyle.Right,
+            Width = 50,
+            TextAlign = ContentAlignment.MiddleCenter,
+            ForeColor = Primaria,
+            Font = new Font("Segoe UI", 16F),
+            BackColor = Color.Transparent
+        });
+
+       
+        void Clicar(object? s, EventArgs e) => BeginInvoke(new Action(() => { selecionado = c; Aplicar(); }));
+        l.Click += Clicar;
+        foreach (Control k in l.Controls) k.Click += Clicar;
+        return l;
+    }
+
+    static Label Coluna(string texto, int x, int largura, bool negrito) => new()
+    {
+        Text = texto,
+        Location = new Point(x, 0),
+        Size = new Size(largura, 72),
+        TextAlign = ContentAlignment.MiddleLeft,
+        ForeColor = Texto,
+        BackColor = Color.Transparent,
+        Font = new Font("Segoe UI", 9.5F, negrito ? FontStyle.Bold : FontStyle.Regular)
+    };
+
+    // ================= ficha do cliente =================
+    Control ConstruirFicha()
+    {
+        var lado = new Panel { Dock = DockStyle.Right, Width = 354, Padding = new Padding(24, 0, 0, 0) };
+        var card = new Caixa { Dock = DockStyle.Fill };
+        lado.Controls.Add(card);
+
+        var mais = Rotulo("•••", 8, FontStyle.Regular, Suave, 0, 24);
+
+        Estilo(lblNome, 20, FontStyle.Regular, Texto, 24, 140, "Georgia");
+        lblNome.AutoSize = false; lblNome.TextAlign = ContentAlignment.MiddleCenter;
+
+        var pill = new Caixa { Raio = 12, Preenchimento = RosaClaro, Borda = RosaClaro, Size = new Size(170, 26), Location = new Point(0, 188) };
+        Estilo(lblPillVisita, 8.5f, FontStyle.Regular, Primaria, 0, 0);
+        lblPillVisita.AutoSize = false; lblPillVisita.Dock = DockStyle.Fill; lblPillVisita.TextAlign = ContentAlignment.MiddleCenter;
+        pill.Controls.Add(lblPillVisita);
+
+        Panel Divisor(int y) => new() { Location = new Point(24, y), Size = new Size(100, 1), BackColor = Borda };
+        var div1 = Divisor(238);
+        var div2 = Divisor(322);
+
+        Estilo(lblTelefone, 9.5f, FontStyle.Regular, Texto, 58, 256);
+        Estilo(lblEmail, 9.5f, FontStyle.Regular, Suave, 58, 288);
+        Estilo(lblVisita, 9.5f, FontStyle.Regular, Suave, 24, 368);
+
+        var historico = BotaoContorno("🕘   Ver histórico", _ => MessageBox.Show("TODO: abrir o histórico do cliente"));
+        historico.Dock = DockStyle.None;
+
+        var editar = Rotulo("Editar cadastro", 9, FontStyle.Bold, Primaria, 0, 0);
+        editar.AutoSize = false; editar.TextAlign = ContentAlignment.MiddleCenter; editar.Cursor = Cursors.Hand;
+        editar.Click += (_, _) => MessageBox.Show("TODO: editar o cadastro do cliente");
+
+        card.Controls.AddRange(new Control[]
+        {
+            Rotulo("FICHA DO CLIENTE", 7.5f, FontStyle.Bold, Suave, 24, 26), mais, avatarFicha, lblNome, pill,
+            div1, Rotulo("📞", 10, FontStyle.Regular, Suave, 24, 252, "Segoe UI Emoji"), lblTelefone,
+            Rotulo("✉", 10, FontStyle.Regular, Suave, 24, 284, "Segoe UI Emoji"), lblEmail, div2,
+            Rotulo("Última visita", 9.5f, FontStyle.Bold, Texto, 24, 340), lblVisita, historico, editar
+        });
+
+        card.Resize += (_, _) =>
+        {
+            int w = card.Width;
+            if (w < 100) return;
+            mais.Left = w - 24 - mais.Width;
+            avatarFicha.Location = new Point((w - avatarFicha.Width) / 2, 64);
+            lblNome.SetBounds(24, 140, w - 48, 38);
+            pill.Left = (w - pill.Width) / 2;
+            div1.Width = div2.Width = w - 48;
+            historico.SetBounds(24, 402, w - 48, 46);
+            editar.SetBounds(24, 464, w - 48, 24);
+        };
+        return lado;
+    }
+
+    void PreencherFicha()
+    {
+        var c = selecionado;
+        avatarFicha.Iniciais = c is null ? "" : Iniciais(c.Nome);
+        avatarFicha.Invalidate();
+        lblNome.Text = c?.Nome ?? "Nenhum cliente";
+        lblTelefone.Text = c?.Telefone ?? "—";
+        lblEmail.Text = c?.Email is { Length: > 0 } e ? e : "E-mail não informado";
+        var visita = c?.UltimaVisita?.ToString("dd/MM/yyyy") ?? "—";
+        lblVisita.Text = visita;
+        lblPillVisita.Text = $"Última visita: {visita}";
+    }
+
+    // ================= rodapé da página =================
+    Control ConstruirRodape()
+    {
+        var p = new Panel { Dock = DockStyle.Bottom, Height = 40 };
+        p.Controls.Add(Rotulo("♡", 11, FontStyle.Bold, Primaria, 0, 8));
+        p.Controls.Add(Rotulo("Cuidar dos detalhes é o primeiro passo para um atendimento memorável.", 8.5f, FontStyle.Regular, Suave, 24, 12));
+        return p;
+    }
+
+    // ================= filtro + ordenação + paginação =================
+    void Aplicar()
+    {
+        var limite = DateTime.Today.AddDays(-30);
+        IEnumerable<Cliente> q = todos;
+
+        var t = busca.Text.Trim();
+        if (t.Length > 0)
+            q = q.Where(c => c.Nome.Contains(t, StringComparison.CurrentCultureIgnoreCase) || c.Telefone.Contains(t));
+        if (filtroVisita == 1) q = q.Where(c => c.UltimaVisita >= limite);
+        if (filtroVisita == 2) q = q.Where(c => c.UltimaVisita is null || c.UltimaVisita < limite);
+
+        q = ordemAZ ? q.OrderBy(c => c.Nome, StringComparer.CurrentCultureIgnoreCase)
+                    : q.OrderByDescending(c => c.Nome, StringComparer.CurrentCultureIgnoreCase);
+
+        var lista = q.ToList();
+        totalPaginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)PorPagina));
+        pagina = Math.Clamp(pagina, 1, totalPaginas);
+        var visiveis = lista.Skip((pagina - 1) * PorPagina).Take(PorPagina).ToList();
+
+        if (selecionado is null || !lista.Contains(selecionado))
+            selecionado = visiveis.FirstOrDefault();
+
+        linhas.SuspendLayout();
+        foreach (var antigo in linhas.Controls.Cast<Control>().ToList()) antigo.Dispose();
+        for (int i = visiveis.Count - 1; i >= 0; i--) linhas.Controls.Add(Linha(visiveis[i]));
+        linhas.ResumeLayout();
+
+        string plural = lista.Count == 1 ? "cliente" : "clientes";
+        int primeiro = (pagina - 1) * PorPagina + 1;
+        lblBadge.Text = $"{lista.Count} {plural}";
+        lblMostrando.Text = lista.Count == 0
+            ? "Nenhum cliente encontrado"
+            : $"Mostrando {primeiro}–{primeiro + visiveis.Count - 1} de {lista.Count} {plural}";
+        lblPagina.Text = pagina.ToString();
+        ((Label)ordenar.Controls[0]).Text = ordemAZ ? "⇅   Nome: A–Z" : "⇅   Nome: Z–A";
+
+        PreencherFicha();
+    }
+
+    // ================= utilitários =================
+    static string Iniciais(string nome)
+    {
+        var partes = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Concat(partes.Take(2).Select(p => char.ToUpper(p[0])));
+    }
+
+    static void Estilo(Label l, float tam, FontStyle estilo, Color cor, int x, int y, string fonte = "Segoe UI")
+    {
+        l.AutoSize = true;
+        l.Location = new Point(x, y);
+        l.ForeColor = cor;
+        l.BackColor = Color.Transparent;
+        l.Font = new Font(fonte, tam, estilo);
+    }
+
+    static Label Rotulo(string texto, float tam, FontStyle estilo, Color cor, int x, int y, string fonte = "Segoe UI")
+    {
+        var l = new Label { Text = texto };
+        Estilo(l, tam, estilo, cor, x, y, fonte);
+        return l;
+    }
+
+
+    static Caixa BotaoContorno(string texto, Action<Control> aoClicar)
+    {
+        var caixa = new Caixa { Raio = 10, Cursor = Cursors.Hand, Dock = DockStyle.Fill, Padding = new Padding(1) };
+        var rotulo = new Label
+        {
+            Text = texto,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleCenter,
+            ForeColor = Texto,
+            BackColor = Color.Transparent,
+            Cursor = Cursors.Hand,
+            Font = new Font("Segoe UI Semibold", 10F)
+        };
+        caixa.Controls.Add(rotulo);
+        caixa.Click += (_, _) => aoClicar(caixa);
+        rotulo.Click += (_, _) => aoClicar(caixa);
+        return caixa;
+    }
+}
+
+// ---------- controles auxiliares ----------
+
+
+class Caixa : Panel
+{
+    public int Raio { get; set; } = 14;
+    public Color Preenchimento { get; set; } = Color.White;
+    public Color Borda { get; set; } = Color.FromArgb(232, 226, 223);
+
+    public Caixa()
+    {
+        DoubleBuffered = true;
+        ResizeRedraw = true;
+        BackColor = Color.Transparent;
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        if (Width < 2 || Height < 2) return;
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        using var caminho = Formas.Caminho(new Rectangle(0, 0, Width - 1, Height - 1), Raio);
+        using var pincel = new SolidBrush(Preenchimento);
+        using var caneta = new Pen(Borda);
+        e.Graphics.FillPath(pincel, caminho);
+        e.Graphics.DrawPath(caneta, caminho);
+    }
+}
+
+
+class AvatarIniciais : Control
+{
+    public string Iniciais { get; set; } = "";
+    public Color Fundo { get; set; } = Color.FromArgb(243, 220, 228);
+    public Color Cor { get; set; } = Cores.Primaria;
+
+    public AvatarIniciais() => DoubleBuffered = true;
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        using var pincel = new SolidBrush(Fundo);
+        e.Graphics.FillEllipse(pincel, 0, 0, Width - 1, Height - 1);
+        using var fonte = new Font("Segoe UI", Width / 4.2f, FontStyle.Bold);
+        TextRenderer.DrawText(e.Graphics, Iniciais, fonte, ClientRectangle, Cor,
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+    }
+}
+
+static class Formas
+{
+    public static GraphicsPath Caminho(Rectangle r, int raio)
+    {
+        var p = new GraphicsPath();
+        int d = Math.Min(raio * 2, Math.Min(r.Width, r.Height));
+        if (d <= 0) { p.AddRectangle(r); return p; }
+        p.AddArc(r.X, r.Y, d, d, 180, 90);
+        p.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+        p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+        p.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+        p.CloseFigure();
+        return p;
+    }
+
+    public static void Arredondar(Control c, int raio)
+    {
+        void Ajustar(object? s, EventArgs e)
+        {
+            if (c.Width < raio * 2 || c.Height < raio * 2) return;
+            c.Region?.Dispose();
+            using var caminho = Caminho(new Rectangle(0, 0, c.Width, c.Height), raio);
+            c.Region = new Region(caminho);
+        }
+        c.SizeChanged += Ajustar;
+        Ajustar(null, EventArgs.Empty);
+    }
+}
