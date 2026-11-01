@@ -109,7 +109,7 @@ class MiniCalendario : Control
     // (usado pela seleção rosa e pelo círculo rasurado dos domingos)
     static RectangleF CirculoDaCasa(RectangleF r)
     {
-        float d = Math.Min(r.Width, r.Height) - 7  ;
+        float d = Math.Min(r.Width, r.Height) - 7;
         return new RectangleF(r.X + (r.Width - d) / 2, r.Y + (r.Height - d) / 2, d, d);
     }
 
@@ -248,4 +248,4 @@ class MiniCalendario : Control
                          selecionado ? bDiaSel : (doMes ? bDia : bApagado), r, centro);
         }
     }
-}   
+}
