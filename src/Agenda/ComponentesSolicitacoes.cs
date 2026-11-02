@@ -7,6 +7,17 @@ namespace dashboardforms.Agenda;
 // ===== Cores extras da Agenda (derivadas da paleta do projeto) =====
 static class PaletaAgenda
 {
+    // família de fonte usada em TODOS os textos da Agenda (troque aqui para testar outra)
+    // const: o valor é fixo e pode ser usado até como valor padrão de propriedade
+    public const string FontePadrao = "Constantia";
+
+    // espessura (em pixels) das linhas divisórias horizontal e vertical
+    // (o controle de cada linha, no FrmAgenda, precisa ter tamanho >= este valor)
+    public const float EspessuraDivisor = 1.9f;
+
+    // cor das linhas divisórias horizontal e vertical
+    public static readonly Color CorDivisor = Cores.Primaria;
+
     // rosa muito claro: Cores.Rosa misturado com branco (0 = cor original, 1 = branco)
     public static readonly Color FundoCard = Misturar(Cores.Rosa, Color.White, 1.0f);
 
@@ -25,7 +36,7 @@ static class PaletaAgenda
         (int)(cor.B + (alvo.B - cor.B) * t));
 }
 
-// ===== Linha divisória (mesma caneta da linha do minicalendário) =====
+// ===== Linha divisória horizontal (mesma caneta da linha do minicalendário) =====
 class LinhaDivisoria : Control
 {
     public LinhaDivisoria()
@@ -40,8 +51,29 @@ class LinhaDivisoria : Control
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
 
-        using var caneta = new Pen(Cores.Rosa, 1.0f); // igual à linha do calendário
+        using var caneta = new Pen(PaletaAgenda.CorDivisor, PaletaAgenda.EspessuraDivisor);
         g.DrawLine(caneta, 0, Height / 2f, Width, Height / 2f);
+    }
+}
+
+// ===== Linha divisória vertical (separa a coluna esquerda das próximas funções) =====
+class LinhaVertical : Control
+{
+    public LinhaVertical()
+    {
+        SetStyle(ControlStyles.SupportsTransparentBackColor | ControlStyles.OptimizedDoubleBuffer |
+                 ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
+        BackColor = Color.Transparent;
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        var g = e.Graphics;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+
+        using var caneta = new Pen(PaletaAgenda.CorDivisor, PaletaAgenda.EspessuraDivisor); // mesma caneta da linha horizontal
+        // x fixo no meio da largura; y vai do topo (0) até a base (Height)
+        g.DrawLine(caneta, Width / 2f, 0, Width / 2f, Height);
     }
 }
 
@@ -52,7 +84,7 @@ class MiniRotulo : Control
     public Color CorBorda { get; set; } = Cores.Primaria; public Color CorTexto { get; set; } = Cores.Escuro;
     public int Raio { get; set; } = 8;
     public float TamanhoFonte { get; set; } = 8f;
-    public string FamiliaFonte { get; set; } = "Segoe UI";
+    public string FamiliaFonte { get; set; } = PaletaAgenda.FontePadrao;
 
     public MiniRotulo()
     {
@@ -88,7 +120,7 @@ class MiniRotulo : Control
     {
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+        g.TextRenderingHint = TextRenderingHint.AntiAlias;   // suaviza as letras, sem encaixar na grade de pixels
 
         using var fonte = new Font(FamiliaFonte, TamanhoFonte);
         Desenhar(g, ClientRectangle, Text, CorFundo, CorBorda, CorTexto, fonte, Raio);
@@ -126,11 +158,11 @@ class CardSolicitacao : Control
     {
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+        g.TextRenderingHint = TextRenderingHint.AntiAlias;   // suaviza as letras, sem encaixar na grade de pixels
 
-        using var fNome = new Font("Segoe UI", 10f, FontStyle.Bold);
-        using var fInfo = new Font("Segoe UI", 8.5f);
-        using var fBotao = new Font("Segoe UI Semibold", 8.5f);
+        using var fNome = new Font(PaletaAgenda.FontePadrao, 10f, FontStyle.Bold);
+        using var fInfo = new Font(PaletaAgenda.FontePadrao, 8.5f);
+        using var fBotao = new Font(PaletaAgenda.FontePadrao, 8.5f, FontStyle.Bold);  // antes "Segoe UI Semibold"
 
         DesenharFundo(g);
         DesenharTextos(g, fNome, fInfo);

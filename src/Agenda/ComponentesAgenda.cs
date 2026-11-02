@@ -183,11 +183,11 @@ class MiniCalendario : Control
     {
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;   // suaviza as letras, sem encaixar na grade
 
-        using var fTitulo = new Font("Segoe UI", 11f, FontStyle.Bold);
-        using var fSemana = new Font("Segoe UI", 9f, FontStyle.Bold);
-        using var fDia = new Font("Segoe UI", 9.5f);
+        using var fTitulo = new Font(PaletaAgenda.FontePadrao, 11f, FontStyle.Bold);
+        using var fSemana = new Font(PaletaAgenda.FontePadrao, 9f, FontStyle.Bold);
+        using var fDia = new Font(PaletaAgenda.FontePadrao, 9.5f);
         using var bTitulo = new SolidBrush(Cores.Escuro);
         using var bSemana = new SolidBrush(Cores.Cinza);
         using var bDia = new SolidBrush(Cores.Texto);
