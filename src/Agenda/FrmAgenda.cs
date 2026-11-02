@@ -29,6 +29,17 @@ public partial class FrmAgenda : Form
     const int EspacoTituloDivisor = 8;   // distância entre o título e a linha (maior = linha mais baixa)
     // =====================================================================
 
+    // =====================================================================
+    // >>> NOVO (item 5): constantes do botão "+ Novo Agendamento" e a lista de agendamentos <<<
+    // =====================================================================
+    const int LarguraBotaoNovo = 190;
+    const int AlturaBotaoNovo = 38;
+    const int EspacoBotaoTitulo = 16;    // respiro entre o fim do título e o botão
+
+    // agendamentos salvos (por enquanto só em memória; depois virá do banco)
+    readonly List<Agendamento> agendamentos = new();
+    // =====================================================================
+
     // guardamos o label em um campo para o método AtualizarTitulo conseguir alterá-lo
     Label lblTituloAgenda = null!;
 
@@ -67,6 +78,9 @@ public partial class FrmAgenda : Form
 
         // >>> NOVO 2/3: linha horizontal abaixo do título <<<
         MontarDivisorTitulo(cardCalendario);
+
+        // >>> NOVO (item 5): botão "+ Novo Agendamento" <<<
+        MontarBotaoNovoAgendamento(cardCalendario);
     }
 
     private void FrmAgenda_Load(object sender, EventArgs e)
@@ -93,7 +107,9 @@ public partial class FrmAgenda : Form
             TextAlign = ContentAlignment.MiddleLeft,
             UseCompatibleTextRendering = false,       // motor GDI (ClearType): bordas mais suaves em fonte grande
             Location = new Point(x, referencia.Top),
-            Size = new Size(ClientSize.Width - x - MargemDireita, AlturaTituloAgenda),
+            // >>> ALTERADO (item 5): reserva espaço à direita para o botão <<<
+            Size = new Size(ClientSize.Width - x - MargemDireita - LarguraBotaoNovo - EspacoBotaoTitulo,
+                            AlturaTituloAgenda),
             // acompanha a janela: fixo no topo/esquerda e estica até a direita
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
@@ -101,6 +117,53 @@ public partial class FrmAgenda : Form
         Controls.Add(lblTituloAgenda);
 
         AtualizarTitulo(DateTime.Today);              // estado inicial
+    }
+
+    // >>> NOVO (item 5): botão no canto superior direito, acima da linha divisória <<<
+    // Usa o MiniRotulo como botão: a classe já desenha retângulo arredondado com texto centralizado.
+    void MontarBotaoNovoAgendamento(Control referencia)
+    {
+        // encostado na margem direita da janela
+        int x = ClientSize.Width - MargemDireita - LarguraBotaoNovo;
+        // centralizado na vertical dentro da faixa do título (fica acima da linha)
+        int y = referencia.Top + (AlturaTituloAgenda - AlturaBotaoNovo) / 2;
+
+        var botao = new MiniRotulo
+        {
+            Text = "+ Novo Agendamento",
+            CorFundo = Cores.Primaria,
+            CorBorda = Cores.Primaria,
+            CorTexto = Color.White,
+            Raio = 12,
+            TamanhoFonte = 11f,
+            Location = new Point(x, y),
+            Size = new Size(LarguraBotaoNovo, AlturaBotaoNovo),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right   // acompanha a borda direita ao redimensionar
+        };
+
+        // hover: a cor primária fica 15% mais escura enquanto o mouse está em cima
+        EfeitosAgenda.AplicarHover(botao, PaletaAgenda.Misturar(Cores.Primaria, Color.Black, 0.15f));
+        botao.Click += (s, e) => AbrirNovoAgendamento();
+
+        Controls.Add(botao);
+    }
+
+    // >>> NOVO (item 5): abre o miniformulário e recebe o agendamento confirmado <<<
+    void AbrirNovoAgendamento()
+    {
+        using var frm = new FrmNovoAgendamento(agendamentos);
+
+        // ShowDialog(this) = modal: a agenda fica travada até o formulário fechar
+        if (frm.ShowDialog(this) != DialogResult.OK || frm.Resultado == null) return;
+
+        agendamentos.Add(frm.Resultado);   // a partir daqui o horário passa a contar como ocupado
+
+        // confirmação provisória; os cards do item 9 virão no lugar disso
+        MessageBox.Show(this,
+            $"{frm.Resultado.Cliente}\n{frm.Resultado.DescricaoProcedimentos}\n" +
+            $"{frm.Resultado.Data:dd/MM/yyyy} — {RegrasAgenda.Formatar(frm.Resultado.InicioMin)} " +
+            $"às {RegrasAgenda.Formatar(frm.Resultado.FimMin)}",
+            "Agendamento salvo", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     // >>> NOVO 3/3: método da divisória abaixo do título <<<
