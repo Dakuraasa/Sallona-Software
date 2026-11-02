@@ -16,6 +16,11 @@ class Agendamento
     public int DuracaoMin { get; init; }
     public string Observacoes { get; init; } = "";
 
+    // >>> NOVO (itens 7 e 8): status do agendamento, com os mesmos textos do filtro de status <<<
+    // "set" (e não "init"): o status muda depois de salvo (confirmar, concluir, cancelar...).
+    // Um agendamento criado pelo formulário já nasce confirmado; para nascer pendente, troque aqui.
+    public string Status { get; set; } = StatusAgenda.Confirmados;
+
     public string DescricaoProcedimentos => string.Join(", ", Procedimentos);
 }
 

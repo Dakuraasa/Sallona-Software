@@ -53,6 +53,23 @@ public partial class FrmAgenda : Form
     internal FiltrosAgenda FiltrosAtuais => faixaFiltros.Filtros;
     // =====================================================================
 
+    // =====================================================================
+    // >>> NOVO (itens 7 e 8): constantes e campos da área dos agendamentos do dia <<<
+    // =====================================================================
+    const int EspacoAcimaAgenda = 10;   // entre a divisória de baixo dos filtros e a área do dia
+    const int MargemInferior = 24;      // respiro entre a área do dia e a borda de baixo da janela
+
+    // o calendário vira campo para o formulário saber a data escolhida a qualquer momento
+    MiniCalendario calendario = null!;
+
+    // a área fica em um campo para ser atualizada quando data, filtros ou agendamentos mudarem
+    AreaAgendaDia areaAgenda = null!;
+
+    // data mostrada na agenda: a escolhida no calendário (ou hoje, se não houver seleção)
+    // — a mesma regra que o título já usava
+    DateTime DataAtual => calendario.DataSelecionada ?? DateTime.Today;
+    // =====================================================================
+
     // guardamos o label em um campo para o método AtualizarTitulo conseguir alterá-lo
     Label lblTituloAgenda = null!;
 
@@ -70,12 +87,17 @@ public partial class FrmAgenda : Form
             EspessuraBorda = 2
         };
 
-        var calendario = new MiniCalendario { Dock = DockStyle.Fill };
+        // >>> ALTERADO (itens 7 e 8): deixou de ser variável local para virar o campo "calendario" <<<
+        calendario = new MiniCalendario { Dock = DockStyle.Fill };
 
         // quando o usuário escolhe uma data, o título acompanha
         // (se a seleção for limpa, volta para a data de hoje)
+        // >>> ALTERADO (itens 7 e 8): a área dos agendamentos também é atualizada <<<
         calendario.DataSelecionadaAlterada += (s, e) =>
-            AtualizarTitulo(calendario.DataSelecionada ?? DateTime.Today);
+        {
+            AtualizarTitulo(DataAtual);
+            AtualizarAgendaDia();
+        };
 
         cardCalendario.Controls.Add(calendario);
         Controls.Add(cardCalendario);
@@ -97,6 +119,9 @@ public partial class FrmAgenda : Form
 
         // >>> NOVO (item 6): faixa de filtros + divisória inferior <<<
         MontarFaixaFiltros(cardCalendario);
+
+        // >>> NOVO (itens 7 e 8): área dos agendamentos do dia, abaixo da divisória dos filtros <<<
+        MontarAreaAgenda(cardCalendario);
     }
 
     private void FrmAgenda_Load(object sender, EventArgs e)
@@ -174,7 +199,16 @@ public partial class FrmAgenda : Form
 
         agendamentos.Add(frm.Resultado);   // a partir daqui o horário passa a contar como ocupado
 
-        // confirmação provisória; os cards do item 9 virão no lugar disso
+        // >>> ALTERADO (itens 7 e 8): o card do novo agendamento aparece sozinho na agenda <<<
+        AtualizarAgendaDia();
+
+        // A confirmação provisória só continua existindo quando o card NÃO aparece agora
+        // (data diferente da que está na tela, ou escondido pelos filtros): sem ela, a pessoa
+        // não teria nenhum retorno visual de que o agendamento foi salvo.
+        bool apareceNaTela = frm.Resultado.Data.Date == DataAtual.Date
+                          && FiltrosAtuais.Aceita(frm.Resultado, frm.Resultado.Status);
+        if (apareceNaTela) return;
+
         MessageBox.Show(this,
             $"{frm.Resultado.Cliente}\n{frm.Resultado.DescricaoProcedimentos}\n" +
             $"{frm.Resultado.Data:dd/MM/yyyy} — {RegrasAgenda.Formatar(frm.Resultado.InicioMin)} " +
@@ -236,12 +270,51 @@ public partial class FrmAgenda : Form
         });
     }
 
+    // >>> NOVO (itens 7 e 8): área dos agendamentos, logo abaixo da divisória de baixo dos filtros <<<
+    // Todas as posições vêm das constantes que já existem; a conta é a mesma de MontarFaixaFiltros.
+    void MontarAreaAgenda(Control referencia)
+    {
+        // mesmo X da faixa de filtros e do título principal
+        int x = referencia.Right + 2 * EspacoAteDivisor + LarguraDivisorVertical;
+
+        // Y da divisória de baixo dos filtros (mesma conta de MontarFaixaFiltros) + a divisória + um respiro
+        int yDivisorTitulo = referencia.Top + AlturaTituloAgenda + EspacoTituloDivisor;
+        int yFaixa = yDivisorTitulo + AlturaDivisor + EspacoAcimaFaixa;
+        int yDivisorFiltros = yFaixa + AlturaFiltro + EspacoAbaixoFaixa;
+        int y = yDivisorFiltros + AlturaDivisor + EspacoAcimaAgenda;
+
+        areaAgenda = new AreaAgendaDia
+        {
+            Location = new Point(x, y),
+            Size = new Size(ClientSize.Width - x - MargemDireita,
+                            Math.Max(ClientSize.Height - y - MargemInferior, AreaAgendaDia.AlturaMinima)),
+            // acompanha a janela nas quatro direções: a escala se ajusta à altura disponível
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
+        };
+
+        Controls.Add(areaAgenda);
+
+        AtualizarAgendaDia();                         // estado inicial
+    }
+
+    // >>> NOVO (itens 7 e 8): ponto de encontro com os itens 5 e 6 e com o calendário <<<
+    // Escolhe, entre os agendamentos salvos, só os da data na tela que passam nos dois filtros.
+    // A lista original (agendamentos) nunca é alterada: a área recebe apenas uma consulta sobre ela.
+    void AtualizarAgendaDia()
+    {
+        var filtros = FiltrosAtuais;
+        DateTime data = DataAtual.Date;
+
+        areaAgenda.Definir(agendamentos
+            .Where(a => a.Data.Date == data && filtros.Aceita(a, a.Status))
+            .OrderBy(a => a.InicioMin));
+    }
+
     // >>> NOVO (item 6): ponto de encontro com o item 7 <<<
-    // Por enquanto não há cards para atualizar. No item 7, este método vai ler
-    // FiltrosAtuais e refazer a lista com: agendamentos.Where(a => filtros.Aceita(a, status)).
+    // >>> ALTERADO (itens 7 e 8): agora refaz os cards com os filtros escolhidos <<<
     void AoMudarFiltros()
     {
-        // intencionalmente vazio nesta etapa
+        AtualizarAgendaDia();
     }
 
     // Único lugar que formata a data do título.
