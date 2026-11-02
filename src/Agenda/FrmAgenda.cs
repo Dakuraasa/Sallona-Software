@@ -40,6 +40,19 @@ public partial class FrmAgenda : Form
     readonly List<Agendamento> agendamentos = new();
     // =====================================================================
 
+    // =====================================================================
+    // >>> NOVO (item 6): constantes e campo da faixa de filtros <<<
+    // =====================================================================
+    const int EspacoAcimaFaixa = 10;    // entre a divisória do título e a faixa de filtros
+    const int EspacoAbaixoFaixa = 10;   // entre a faixa de filtros e a divisória de baixo
+
+    // a faixa fica em um campo para o item 7 conseguir consultar os filtros escolhidos
+    FaixaFiltros faixaFiltros = null!;
+
+    // o item 7 lê os filtros por aqui (null em um campo = "Todos")
+    internal FiltrosAgenda FiltrosAtuais => faixaFiltros.Filtros;
+    // =====================================================================
+
     // guardamos o label em um campo para o método AtualizarTitulo conseguir alterá-lo
     Label lblTituloAgenda = null!;
 
@@ -81,6 +94,9 @@ public partial class FrmAgenda : Form
 
         // >>> NOVO (item 5): botão "+ Novo Agendamento" <<<
         MontarBotaoNovoAgendamento(cardCalendario);
+
+        // >>> NOVO (item 6): faixa de filtros + divisória inferior <<<
+        MontarFaixaFiltros(cardCalendario);
     }
 
     private void FrmAgenda_Load(object sender, EventArgs e)
@@ -183,6 +199,49 @@ public partial class FrmAgenda : Form
             Size = new Size(ClientSize.Width - x, AlturaDivisor),   // até a borda direita da janela
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         });
+    }
+
+    // >>> NOVO (item 6): faixa de filtros logo abaixo da divisória do título + divisória inferior <<<
+    // Todas as posições vêm das constantes que já existem; nenhuma coordenada solta.
+    void MontarFaixaFiltros(Control referencia)
+    {
+        // X da faixa = mesmo X do título principal (alinhamento inicial com ele)
+        int x = referencia.Right + 2 * EspacoAteDivisor + LarguraDivisorVertical;
+
+        // Y da divisória do título (mesma conta de MontarDivisorTitulo) + a divisória + um respiro
+        int yDivisorTitulo = referencia.Top + AlturaTituloAgenda + EspacoTituloDivisor;
+        int y = yDivisorTitulo + AlturaDivisor + EspacoAcimaFaixa;
+
+        faixaFiltros = new FaixaFiltros(AlturaFiltro);   // mesma altura dos minicards da coluna esquerda
+
+        // largura = espaço que sobra na janela, mas nunca menor que o necessário (nada fica cortado)
+        int larguraDisponivel = ClientSize.Width - x - MargemDireita;
+        faixaFiltros.Location = new Point(x, y);
+        faixaFiltros.Size = new Size(Math.Max(larguraDisponivel, faixaFiltros.LarguraNecessaria), AlturaFiltro);
+        faixaFiltros.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+
+        // sempre que um filtro mudar, o formulário é avisado
+        faixaFiltros.FiltrosAlterados += (s, e) => AoMudarFiltros();
+        Controls.Add(faixaFiltros);
+
+        // divisória de baixo: mesmo X da divisória do título, até a borda direita da janela
+        int xDivisor = referencia.Right + EspacoAteDivisor;
+        int yDivisor = y + AlturaFiltro + EspacoAbaixoFaixa;
+
+        Controls.Add(new LinhaDivisoria
+        {
+            Location = new Point(xDivisor, yDivisor),
+            Size = new Size(ClientSize.Width - xDivisor, AlturaDivisor),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+        });
+    }
+
+    // >>> NOVO (item 6): ponto de encontro com o item 7 <<<
+    // Por enquanto não há cards para atualizar. No item 7, este método vai ler
+    // FiltrosAtuais e refazer a lista com: agendamentos.Where(a => filtros.Aceita(a, status)).
+    void AoMudarFiltros()
+    {
+        // intencionalmente vazio nesta etapa
     }
 
     // Único lugar que formata a data do título.
