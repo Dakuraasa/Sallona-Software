@@ -1,7 +1,6 @@
 ﻿using System.Drawing.Drawing2D;
 
-namespace dashboardforms.Clientes; 
-
+namespace dashboardforms;
 
 public class ClientesPage : UserControl
 {
@@ -13,11 +12,13 @@ public class ClientesPage : UserControl
     static readonly Color RosaClaro = Color.FromArgb(246, 232, 237);
     static readonly Color AvatarFundo = Color.FromArgb(243, 220, 228);
 
-    const int PorPagina = 6;
+    const int AlturaLinha = 72;
+    int porPaginaAtual;
+   
+    int PorPagina => Math.Max(1, linhas.Height / AlturaLinha);
 
     record Cliente(string Nome, string Telefone, string? Email, DateTime? UltimaVisita);
 
-    // dados de exemplo: depois troque pelo seu banco / DAO
     readonly List<Cliente> todos = new()
     {
         new("Maria Souza", "(27) 99999-0001", null, new DateTime(2026, 10, 14)),
@@ -36,24 +37,26 @@ public class ClientesPage : UserControl
     readonly Panel linhas = new() { Dock = DockStyle.Fill, BackColor = Color.White };
     readonly Label lblBadge = new(), lblMostrando = new(), lblPagina = new();
     readonly Label lblNome = new(), lblTelefone = new(), lblEmail = new(), lblVisita = new(), lblPillVisita = new();
-    readonly AvatarIniciais avatarFicha = new() { Size = new Size(64, 64), BackColor = Color.White };
+    readonly AvatarIniciais avatarFicha = new() { Size = new Size(56, 56), BackColor = Color.White };
     Caixa ordenar = null!;
 
     public ClientesPage()
     {
         Dock = DockStyle.Fill;
         BackColor = Cores.Fundo;
-        Padding = new Padding(36, 28, 36, 12);
+        Padding = new Padding(36, 20, 36, 12);
         DoubleBuffered = true;
 
-        var conteudo = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 0, 0, 16) };
+        var conteudo = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 0, 0, 8) };
         conteudo.Controls.Add(ConstruirLista());   
         conteudo.Controls.Add(ConstruirFicha());   
 
         Controls.Add(conteudo);
         Controls.Add(ConstruirRodape());
         Controls.Add(ConstruirBarra());
-        Controls.Add(ConstruirCabecalho());        
+        Controls.Add(ConstruirCabecalho());     
+       
+        linhas.Resize += (_, _) => { if (PorPagina != porPaginaAtual) Aplicar(); };
 
         Aplicar();
     }
@@ -61,12 +64,12 @@ public class ClientesPage : UserControl
     // ================= cabeçalho =================
     Control ConstruirCabecalho()
     {
-        var p = new Panel { Dock = DockStyle.Top, Height = 124 };
+        var p = new Panel { Dock = DockStyle.Top, Height = 108 };
 
         var textos = new Panel { Dock = DockStyle.Fill };
-        textos.Controls.Add(Rotulo("RELAÇÕES QUE FLORESCEM", 7.5f, FontStyle.Bold, Primaria, 0, 2));
-        textos.Controls.Add(Rotulo("Clientes", 26, FontStyle.Regular, Texto, 0, 18, "Georgia"));
-        textos.Controls.Add(Rotulo("Cada pessoa, uma história. Tenha todos os detalhes por perto.", 9.5f, FontStyle.Regular, Suave, 0, 78));
+        textos.Controls.Add(Rotulo("RELAÇÕES QUE FLORESCEM", 7.5f, FontStyle.Bold, Primaria, 0, 0));
+        textos.Controls.Add(Rotulo("Clientes", 26, FontStyle.Regular, Texto, 0, 14, "Georgia"));
+        textos.Controls.Add(Rotulo("Cada pessoa, uma história. Tenha todos os detalhes por perto.", 9.5f, FontStyle.Regular, Suave, 0, 66));
 
         var botao = new Button
         {
@@ -91,9 +94,10 @@ public class ClientesPage : UserControl
         return p;
     }
 
+    // ================= busca + filtros + ordenação =================
     Control ConstruirBarra()
     {
-        var p = new Panel { Dock = DockStyle.Top, Height = 80, Padding = new Padding(0, 0, 0, 34) };
+        var p = new Panel { Dock = DockStyle.Top, Height = 72, Padding = new Padding(0, 0, 0, 26) };
 
         var caixaBusca = new Caixa { Dock = DockStyle.Fill, Raio = 10 };
         busca.BorderStyle = BorderStyle.None;
@@ -133,6 +137,7 @@ public class ClientesPage : UserControl
     {
         var card = new Caixa { Dock = DockStyle.Fill, Padding = new Padding(1) };
 
+        // título + badge com a contagem
         var titulo = new FlowLayoutPanel
         {
             Dock = DockStyle.Top,
@@ -150,11 +155,13 @@ public class ClientesPage : UserControl
         titulo.Controls.Add(tit);
         titulo.Controls.Add(pill);
 
+        // cabeçalho das colunas
         var cab = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = Color.FromArgb(247, 243, 241) };
         cab.Controls.Add(Rotulo("NOME", 7.5f, FontStyle.Bold, Suave, 24, 14));
         cab.Controls.Add(Rotulo("TELEFONE", 7.5f, FontStyle.Bold, Suave, 238, 14));
         cab.Controls.Add(Rotulo("ÚLTIMA VISITA", 7.5f, FontStyle.Bold, Suave, 422, 14));
 
+        // rodapé: "Mostrando..." + paginação
         var rodape = new Panel { Dock = DockStyle.Bottom, Height = 56, BackColor = Color.Transparent };
         Estilo(lblMostrando, 8.5f, FontStyle.Regular, Suave, 24, 20);
 
@@ -209,7 +216,7 @@ public class ClientesPage : UserControl
         bool sel = c == selecionado;
         var fundo = sel ? RosaClaro : Color.White;
 
-        var l = new Panel { Dock = DockStyle.Top, Height = 72, BackColor = fundo, Cursor = Cursors.Hand };
+        var l = new Panel { Dock = DockStyle.Top, Height = AlturaLinha, BackColor = fundo, Cursor = Cursors.Hand };
         l.Paint += (_, e) =>
         {
             using var caneta = new Pen(Borda);
@@ -244,7 +251,7 @@ public class ClientesPage : UserControl
             BackColor = Color.Transparent
         });
 
-       
+        
         void Clicar(object? s, EventArgs e) => BeginInvoke(new Action(() => { selecionado = c; Aplicar(); }));
         l.Click += Clicar;
         foreach (Control k in l.Controls) k.Click += Clicar;
@@ -255,7 +262,7 @@ public class ClientesPage : UserControl
     {
         Text = texto,
         Location = new Point(x, 0),
-        Size = new Size(largura, 72),
+        Size = new Size(largura, AlturaLinha),
         TextAlign = ContentAlignment.MiddleLeft,
         ForeColor = Texto,
         BackColor = Color.Transparent,
@@ -269,23 +276,23 @@ public class ClientesPage : UserControl
         var card = new Caixa { Dock = DockStyle.Fill };
         lado.Controls.Add(card);
 
-        var mais = Rotulo("•••", 8, FontStyle.Regular, Suave, 0, 24);
+        var mais = Rotulo("•••", 8, FontStyle.Regular, Suave, 0, 20);
 
-        Estilo(lblNome, 20, FontStyle.Regular, Texto, 24, 140, "Georgia");
+        Estilo(lblNome, 18, FontStyle.Regular, Texto, 24, 104, "Georgia");
         lblNome.AutoSize = false; lblNome.TextAlign = ContentAlignment.MiddleCenter;
 
-        var pill = new Caixa { Raio = 12, Preenchimento = RosaClaro, Borda = RosaClaro, Size = new Size(170, 26), Location = new Point(0, 188) };
+        var pill = new Caixa { Raio = 12, Preenchimento = RosaClaro, Borda = RosaClaro, Size = new Size(170, 24), Location = new Point(0, 140) };
         Estilo(lblPillVisita, 8.5f, FontStyle.Regular, Primaria, 0, 0);
         lblPillVisita.AutoSize = false; lblPillVisita.Dock = DockStyle.Fill; lblPillVisita.TextAlign = ContentAlignment.MiddleCenter;
         pill.Controls.Add(lblPillVisita);
 
         Panel Divisor(int y) => new() { Location = new Point(24, y), Size = new Size(100, 1), BackColor = Borda };
-        var div1 = Divisor(238);
-        var div2 = Divisor(322);
+        var div1 = Divisor(178);
+        var div2 = Divisor(244);
 
-        Estilo(lblTelefone, 9.5f, FontStyle.Regular, Texto, 58, 256);
-        Estilo(lblEmail, 9.5f, FontStyle.Regular, Suave, 58, 288);
-        Estilo(lblVisita, 9.5f, FontStyle.Regular, Suave, 24, 368);
+        Estilo(lblTelefone, 9.5f, FontStyle.Regular, Texto, 58, 190);
+        Estilo(lblEmail, 9.5f, FontStyle.Regular, Suave, 58, 216);
+        Estilo(lblVisita, 9.5f, FontStyle.Regular, Suave, 24, 278);
 
         var historico = BotaoContorno("🕘   Ver histórico", _ => MessageBox.Show("TODO: abrir o histórico do cliente"));
         historico.Dock = DockStyle.None;
@@ -296,23 +303,25 @@ public class ClientesPage : UserControl
 
         card.Controls.AddRange(new Control[]
         {
-            Rotulo("FICHA DO CLIENTE", 7.5f, FontStyle.Bold, Suave, 24, 26), mais, avatarFicha, lblNome, pill,
-            div1, Rotulo("📞", 10, FontStyle.Regular, Suave, 24, 252, "Segoe UI Emoji"), lblTelefone,
-            Rotulo("✉", 10, FontStyle.Regular, Suave, 24, 284, "Segoe UI Emoji"), lblEmail, div2,
-            Rotulo("Última visita", 9.5f, FontStyle.Bold, Texto, 24, 340), lblVisita, historico, editar
+            Rotulo("FICHA DO CLIENTE", 7.5f, FontStyle.Bold, Suave, 24, 22), mais, avatarFicha, lblNome, pill,
+            div1, Rotulo("📞", 10, FontStyle.Regular, Suave, 24, 186, "Segoe UI Emoji"), lblTelefone,
+            Rotulo("✉", 10, FontStyle.Regular, Suave, 24, 212, "Segoe UI Emoji"), lblEmail, div2,
+            Rotulo("Última visita", 9.5f, FontStyle.Bold, Texto, 24, 256), lblVisita, historico, editar
         });
 
         card.Resize += (_, _) =>
         {
-            int w = card.Width;
+            int w = card.Width, h = card.Height;
             if (w < 100) return;
             mais.Left = w - 24 - mais.Width;
-            avatarFicha.Location = new Point((w - avatarFicha.Width) / 2, 64);
-            lblNome.SetBounds(24, 140, w - 48, 38);
+            avatarFicha.Location = new Point((w - avatarFicha.Width) / 2, 44);
+            lblNome.SetBounds(24, 104, w - 48, 34);
             pill.Left = (w - pill.Width) / 2;
             div1.Width = div2.Width = w - 48;
-            historico.SetBounds(24, 402, w - 48, 46);
-            editar.SetBounds(24, 464, w - 48, 24);
+
+            int baseY = Math.Max(306, h - 96);
+            historico.SetBounds(24, baseY, w - 48, 42);
+            editar.SetBounds(24, baseY + 50, w - 48, 22);
         };
         return lado;
     }
@@ -333,9 +342,9 @@ public class ClientesPage : UserControl
     // ================= rodapé da página =================
     Control ConstruirRodape()
     {
-        var p = new Panel { Dock = DockStyle.Bottom, Height = 40 };
-        p.Controls.Add(Rotulo("♡", 11, FontStyle.Bold, Primaria, 0, 8));
-        p.Controls.Add(Rotulo("Cuidar dos detalhes é o primeiro passo para um atendimento memorável.", 8.5f, FontStyle.Regular, Suave, 24, 12));
+        var p = new Panel { Dock = DockStyle.Bottom, Height = 32 };
+        p.Controls.Add(Rotulo("♡", 11, FontStyle.Bold, Primaria, 0, 4));
+        p.Controls.Add(Rotulo("Cuidar dos detalhes é o primeiro passo para um atendimento memorável.", 8.5f, FontStyle.Regular, Suave, 24, 6));
         return p;
     }
 
@@ -355,20 +364,23 @@ public class ClientesPage : UserControl
                     : q.OrderByDescending(c => c.Nome, StringComparer.CurrentCultureIgnoreCase);
 
         var lista = q.ToList();
-        totalPaginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)PorPagina));
+        int porPagina = PorPagina;
+        porPaginaAtual = porPagina;
+        totalPaginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)porPagina));
         pagina = Math.Clamp(pagina, 1, totalPaginas);
-        var visiveis = lista.Skip((pagina - 1) * PorPagina).Take(PorPagina).ToList();
+        var visiveis = lista.Skip((pagina - 1) * porPagina).Take(porPagina).ToList();
 
         if (selecionado is null || !lista.Contains(selecionado))
             selecionado = visiveis.FirstOrDefault();
 
+  
         linhas.SuspendLayout();
         foreach (var antigo in linhas.Controls.Cast<Control>().ToList()) antigo.Dispose();
         for (int i = visiveis.Count - 1; i >= 0; i--) linhas.Controls.Add(Linha(visiveis[i]));
         linhas.ResumeLayout();
 
         string plural = lista.Count == 1 ? "cliente" : "clientes";
-        int primeiro = (pagina - 1) * PorPagina + 1;
+        int primeiro = (pagina - 1) * porPagina + 1;
         lblBadge.Text = $"{lista.Count} {plural}";
         lblMostrando.Text = lista.Count == 0
             ? "Nenhum cliente encontrado"
@@ -452,7 +464,7 @@ class Caixa : Panel
     }
 }
 
-
+// círculo com as iniciais do cliente
 class AvatarIniciais : Control
 {
     public string Iniciais { get; set; } = "";
