@@ -43,6 +43,7 @@ public class DashboardForm : Form
     public DashboardForm(Usuario usuario)
     {
         this.usuario = usuario;
+        periodoAtual = Periodos.Contains(Repositorios.Configuracao.PeriodoPadrao) ? Repositorios.Configuracao.PeriodoPadrao : "Mês";
         Font = new Font("Segoe UI", 9.5f);
         BackColor = Cores.Fundo;
         MinimumSize = new Size(1100, 680);
@@ -165,6 +166,10 @@ public class DashboardForm : Form
             {
                 "Clientes" => new ClientesPage { Dock = DockStyle.Fill },
                 "Serviços" => new ServicosPage { Dock = DockStyle.Fill },
+                "Profissionais" => new ProfissionaisPage { Dock = DockStyle.Fill },
+                "Produtos" => new ProdutosPage { Dock = DockStyle.Fill },
+                "Estoque" => new EstoquePage { Dock = DockStyle.Fill },
+                "Configurações" => NovaPaginaConfiguracoes(),
                 _ => PaginaEmBreve(nome)   // páginas que outros membros do grupo ainda vão fazer
             };
             paginas[nome] = pagina;
@@ -177,6 +182,17 @@ public class DashboardForm : Form
         if (nome == "Dashboard") AtualizarDashboard();
         Exibir(pagina, nome, nome);
     }
+
+    Control NovaPaginaConfiguracoes()
+    {
+        var p = new ConfiguracoesPage(usuario) { Dock = DockStyle.Fill };
+        p.Desconectar += Sair;                                       // botão "Desconectar" (pergunta antes)
+        p.SessaoEncerrada += () => { SaiuDaConta = true; Close(); }; // backup restaurado / conta excluída
+        p.ContaAlterada += () => Text = $"Sallona - Configurações  ·  {NomeExibido()}";
+        return p;
+    }
+
+    string NomeExibido() => string.IsNullOrWhiteSpace(usuario.NomeSalao) ? usuario.Nome : usuario.NomeSalao;
 
     // Coloca um controle na área de páginas. "menu" é o item da sidebar que fica destacado.
     void Exibir(Control pagina, string titulo, string menu)
@@ -192,8 +208,7 @@ public class DashboardForm : Form
         foreach (var c in anteriores)
             if (!paginas.ContainsValue(c)) BeginInvoke(new Action(c.Dispose));
 
-        string salao = string.IsNullOrWhiteSpace(usuario.NomeSalao) ? usuario.Nome : usuario.NomeSalao;
-        Text = $"Sallona - {titulo}  ·  {salao}";
+        Text = $"Sallona - {titulo}  ·  {NomeExibido()}";
         MarcarMenu(menu);
     }
 
@@ -465,20 +480,21 @@ public class DashboardForm : Form
     {
         var clientes = Repositorios.Clientes.Todos();
         var servicos = Repositorios.Servicos.Todos().Where(s => s.Ativo).ToList();
+        var profissionais = Repositorios.Profissionais.Ativos();
 
-        if (clientes.Count == 0 || servicos.Count == 0)
+        // o que falta cadastrar antes de registrar um atendimento
+        var (falta, oque) = clientes.Count == 0 ? ("Clientes", "um cliente")
+                          : servicos.Count == 0 ? ("Serviços", "um serviço ativo")
+                          : profissionais.Count == 0 ? ("Profissionais", "um profissional ativo")
+                          : ("", "");
+        if (falta.Length > 0)
         {
-            string falta = clientes.Count == 0 ? "Clientes" : "Serviços";
-            string msg = clientes.Count == 0
-                ? "Antes de registrar um atendimento, cadastre pelo menos um cliente."
-                : "Antes de registrar um atendimento, cadastre pelo menos um serviço ativo.";
-            if (MessageBox.Show(this, msg + $"\n\nAbrir a página de {falta} agora?", "Novo atendimento",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+            if (MessageBox.Show(this, $"Antes de registrar um atendimento, cadastre pelo menos {oque}.\n\nAbrir a página de {falta} agora?",
+                    "Novo atendimento", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
                 MostrarPagina(falta);
             return;
         }
 
-        var profissionais = Repositorios.Atendimentos.Todos().Select(a => a.Profissional).Distinct();
         using var dlg = new AtendimentoDialog(clientes, servicos, profissionais);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         if (!Armazenamento.Tentar(this, () => Repositorios.Atendimentos.Adicionar(dlg.Resultado))) return;
@@ -617,6 +633,13 @@ public class DashboardForm : Form
         destaques.Itens.Add(($"Pagamentos pendentes ({pendentes.Count})", null, Color.Empty));
         if (pendentes.Count == 0) destaques.Itens.Add(("Nenhum pagamento pendente", "✓", Cores.Verde));
         foreach (var a in pendentes.Take(3)) destaques.Itens.Add((a.ClienteNome, Formato.Dinheiro(a.Total), Cores.Vinho));
+
+        var baixos = Repositorios.Produtos.Todos().Where(p => p.EstoqueBaixo).OrderBy(p => p.Quantidade).ToList();
+        if (baixos.Count > 0)
+        {
+            destaques.Itens.Add(($"Estoque baixo ({baixos.Count})", null, Color.Empty));
+            foreach (var p in baixos.Take(3)) destaques.Itens.Add((p.Nome, $"{p.Quantidade} {p.Unidade}", Cores.Coral));
+        }
 
         destaques.Itens.Add(("Profissional do mês", null, Color.Empty));
         var top = atendimentos.Where(a => a.Pago && Dentro(a.Data, mes.Inicio, mes.Fim))

@@ -6,17 +6,16 @@ class AtendimentoDialog : Formulario
 {
     public Atendimento Resultado { get; } = new();
 
-    public AtendimentoDialog(List<Cliente> clientes, List<Servico> servicosAtivos, IEnumerable<string> profissionaisAnteriores)
+    public AtendimentoDialog(List<Cliente> clientes, List<Servico> servicosAtivos, List<Profissional> profissionaisAtivos)
         : base("Novo atendimento")
     {
         var cbCliente = AdicionarCampo("Cliente", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
         cbCliente.DisplayMember = nameof(Cliente.Nome);
         cbCliente.DataSource = clientes.OrderBy(c => c.Nome, StringComparer.CurrentCultureIgnoreCase).ToList();
 
-        var txtProf = AdicionarCampo("Profissional", NovaCaixaTexto(60));
-        txtProf.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-        txtProf.AutoCompleteSource = AutoCompleteSource.CustomSource;
-        txtProf.AutoCompleteCustomSource.AddRange(profissionaisAnteriores.ToArray());
+        var cbProf = AdicionarCampo("Profissional", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
+        cbProf.DisplayMember = nameof(Profissional.Nome);
+        cbProf.DataSource = profissionaisAtivos;
 
         var dtData = AdicionarCampo("Data e hora", new DateTimePicker
         {
@@ -44,7 +43,7 @@ class AtendimentoDialog : Formulario
         Validar = () =>
         {
             if (cbCliente.SelectedItem is not Cliente) return "Escolha o cliente.";
-            if (txtProf.Text.Trim().Length == 0) return "Informe quem fez o atendimento.";
+            if (cbProf.SelectedItem is not Profissional) return "Escolha quem fez o atendimento.";
             if (!Marcados().Any()) return "Marque pelo menos um serviço.";
             if (dtData.Value > DateTime.Now.AddMinutes(5)) return "A data não pode estar no futuro (para agendar, use a Agenda).";
             return null;
@@ -54,7 +53,9 @@ class AtendimentoDialog : Formulario
             var c = (Cliente)cbCliente.SelectedItem!;
             Resultado.ClienteId = c.Id;
             Resultado.ClienteNome = c.Nome;
-            Resultado.Profissional = txtProf.Text.Trim();
+            var p = (Profissional)cbProf.SelectedItem!;
+            Resultado.ProfissionalId = p.Id;
+            Resultado.Profissional = p.Nome;
             Resultado.Data = dtData.Value;
             Resultado.Itens = Marcados().Select(s => new ItemAtendimento(s.Nome, s.Preco)).ToList();
         };

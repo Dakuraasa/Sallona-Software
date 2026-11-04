@@ -1,15 +1,16 @@
-namespace dashboardforms.Login;
+﻿namespace dashboardforms.Login;
 
-// ===== Criar conta (aberta pelo link "Cadastre-se" da tela de login) =====
+// ===== Cadastrar o estabelecimento (link "Cadastre-se" da tela de login) =====
+// Uma conta por salão: o dono e os funcionários entram com ela.
 class FrmCadastro : Formulario
 {
     public Usuario? Criado { get; private set; }
 
-    public FrmCadastro(UsuarioRepositorio contas) : base("Criar conta", "Criar conta")
+    public FrmCadastro(UsuarioRepositorio contas) : base("Cadastrar estabelecimento", "Criar conta")
     {
-        var txtNome = AdicionarCampo("Seu nome", NovaCaixaTexto(80));
-        var txtSalao = AdicionarCampo("Nome do salão", NovaCaixaTexto(80));
-        var txtEmail = AdicionarCampo("E-mail (usado para entrar)", NovaCaixaTexto(120));
+        var txtSalao = AdicionarCampo("Nome do estabelecimento", NovaCaixaTexto(80));
+        var txtNome = AdicionarCampo("Responsável", NovaCaixaTexto(80));
+        var txtEmail = AdicionarCampo("E-mail do estabelecimento (usado para entrar)", NovaCaixaTexto(120));
         var txtSenha = AdicionarCampo("Senha (mínimo 6 caracteres)", NovaCaixaTexto(64));
         var txtConfirma = AdicionarCampo("Confirmar senha", NovaCaixaTexto(64));
         txtSenha.UseSystemPasswordChar = txtConfirma.UseSystemPasswordChar = true;
@@ -17,7 +18,8 @@ class FrmCadastro : Formulario
         Validar = () =>
         {
             string email = txtEmail.Text.Trim();
-            if (txtNome.Text.Trim().Length == 0) return "Informe o seu nome.";
+            if (txtSalao.Text.Trim().Length == 0) return "Informe o nome do estabelecimento.";
+            if (txtNome.Text.Trim().Length == 0) return "Informe o nome do responsável.";
             if (!UsuarioRepositorio.EmailValido(email)) return "Digite um e-mail válido.";
             if (contas.EmailEmUso(email)) return "Já existe uma conta com esse e-mail.";
             if (txtSenha.Text.Length < 6) return "A senha precisa ter pelo menos 6 caracteres.";

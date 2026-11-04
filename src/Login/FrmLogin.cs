@@ -28,8 +28,6 @@ namespace dashboardforms.Login
         Panel pnlEsquerdo = null!;
         Panel pnlDireito = null!;
         BotaoArredondado btnEntrar = null!;
-        BotaoArredondado btnProprietaria = null!;
-        BotaoArredondado btnCliente = null!;
         PainelArredondado campoEmail = null!;
         PainelArredondado campoSenha = null!;
         TextBox txtEmail = null!;
@@ -40,7 +38,6 @@ namespace dashboardforms.Login
         LinkLabel lnkEsqueci = null!;
         LinkLabel lnkCadastro = null!;
 
-        bool ehProprietaria = true;
 
         string arquivoEmail = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -53,12 +50,11 @@ namespace dashboardforms.Login
             ConfigurarForm();
             CriarPainelEsquerdo();
             CriarPainelDireito();
-            MudarPerfil(true);
             CarregarEmail();
             AcceptButton = btnEntrar;
 
             if (contas.Vazio)
-                lblSubtitulo.Text = "Primeiro acesso? Crie sua conta no link abaixo.";
+                lblSubtitulo.Text = "Primeiro acesso? Cadastre o estabelecimento no link abaixo.";
         }
 
         void ConfigurarForm()
@@ -195,10 +191,20 @@ namespace dashboardforms.Login
             lblSubtitulo = CriarLabel(pnlDireito, "Acesse sua conta para continuar.", x, 108, largura, 24,
                 new Font("Segoe UI", 10F), corCinza, ContentAlignment.TopLeft);
 
-            btnProprietaria = CriarAba("Proprietária", x, 150);
-            btnCliente = CriarAba("Cliente", x + 194, 150);
-            btnProprietaria.Click += btnProprietaria_Click;
-            btnCliente.Click += btnCliente_Click;
+            // O login é do ESTABELECIMENTO (dono e funcionários usam a mesma conta do salão)
+            var aviso = new PainelArredondado
+            {
+                Left = x, Top = 150, Width = largura, Height = 44, Raio = 10,
+                BackColor = corFundo, CorBorda = corFundo
+            };
+            aviso.Controls.Add(new Label
+            {
+                Text = "🏪   Acesso do estabelecimento — dono(a) e equipe",
+                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter,
+                ForeColor = corVinho, BackColor = Color.Transparent,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold)
+            });
+            pnlDireito.Controls.Add(aviso);
 
             CriarLabel(pnlDireito, "E-mail", x, 222, largura, 22, fonteNegrito, corTexto, ContentAlignment.TopLeft);
             campoEmail = CriarCampo(x, 246, largura, "seu@email.com", out txtEmail);
@@ -268,12 +274,12 @@ namespace dashboardforms.Login
                 new Font("Segoe UI", 9F), corErro, ContentAlignment.TopLeft);
 
             CriarLabel(pnlDireito,
-                "Cada conta tem os seus próprios dados, salvos neste computador. A senha é guardada de forma protegida (hash).",
+                "Uma conta por estabelecimento, com dados salvos neste computador. A senha é guardada de forma protegida (hash).",
                 x, 516, largura, 44, new Font("Segoe UI", 9F), corCinza, ContentAlignment.TopLeft);
 
             lnkCadastro = new LinkLabel();
-            lnkCadastro.Text = "Ainda não tem conta? Cadastre-se";
-            lnkCadastro.LinkArea = new LinkArea(21, 11);
+            lnkCadastro.Text = "Estabelecimento novo? Cadastre-se";
+            lnkCadastro.LinkArea = new LinkArea(22, 11);
             lnkCadastro.Left = x;
             lnkCadastro.Top = 584;
             lnkCadastro.Width = largura;
@@ -318,12 +324,6 @@ namespace dashboardforms.Login
                 return;
             }
 
-            if (!ehProprietaria)
-            {
-                MostrarErro("A área do cliente ainda está em desenvolvimento.", txtEmail);
-                return;
-            }
-
             if (senha == "")
             {
                 MostrarErro("Informe a sua senha.", txtSenha);
@@ -351,7 +351,7 @@ namespace dashboardforms.Login
             // TODO: recuperação de senha por e-mail precisa de um servidor (fica para quando houver banco/servidor)
             MessageBox.Show(
                 "A recuperação de senha por e-mail ainda não está disponível nesta versão.\n" +
-                "Se esquecer a senha, crie uma nova conta.",
+                "Quem estiver conectado pode trocar a senha em Configurações.",
                 "Recuperar senha", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -360,65 +360,10 @@ namespace dashboardforms.Login
             using var cadastro = new FrmCadastro(contas);
             if (cadastro.ShowDialog(this) != DialogResult.OK || cadastro.Criado == null) return;
 
-            MudarPerfil(true);
             txtEmail.Text = cadastro.Criado.Email;
             txtSenha.Clear();
             lblSubtitulo.Text = "Conta criada! Digite sua senha para entrar.";
             txtSenha.Focus();
-        }
-
-        void btnProprietaria_Click(object? sender, EventArgs e)
-        {
-            MudarPerfil(true);
-        }
-
-        void btnCliente_Click(object? sender, EventArgs e)
-        {
-            MudarPerfil(false);
-        }
-
-        void MudarPerfil(bool proprietaria)
-        {
-            ehProprietaria = proprietaria;
-            PintarAba(btnProprietaria, proprietaria);
-            PintarAba(btnCliente, !proprietaria);
-
-            if (lblErro != null)
-                lblErro.Text = "";
-        }
-
-        void PintarAba(BotaoArredondado aba, bool selecionada)
-        {
-            if (selecionada)
-            {
-                aba.CorNormal = corVinho;
-                aba.CorHover = corVinho;
-                aba.CorBorda = corVinho;
-                aba.ForeColor = Color.White;
-            }
-            else
-            {
-                aba.CorNormal = Color.White;
-                aba.CorHover = corFundo;
-                aba.CorBorda = corBorda;
-                aba.ForeColor = corTexto;
-            }
-
-            aba.Invalidate();
-        }
-
-        BotaoArredondado CriarAba(string texto, int x, int y)
-        {
-            BotaoArredondado aba = new BotaoArredondado();
-            aba.Text = texto;
-            aba.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            aba.Left = x;
-            aba.Top = y;
-            aba.Width = 186;
-            aba.Height = 44;
-            aba.Raio = 10;
-            pnlDireito.Controls.Add(aba);
-            return aba;
         }
 
         void MostrarErro(string mensagem, Control campo)

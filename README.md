@@ -11,12 +11,16 @@ como projeto final do curso Técnico em Informática.
 
 | Tela | Situação |
 |---|---|
-| Login | Primeira tela ao abrir. Cada conta é criada em "Cadastre-se" e tem os próprios dados |
-| Dashboard | Faturamento, atendimentos, novos clientes, ticket médio, gráfico e meta — tudo calculado dos dados da conta |
+| Login | Primeira tela ao abrir. **Uma conta por estabelecimento** (dono e equipe usam a mesma), criada em "Cadastre-se" |
+| Dashboard | Faturamento, atendimentos, novos clientes, ticket médio, gráfico, meta e alertas — calculados dos dados da conta |
 | Clientes | Cadastrar, editar, excluir, buscar, filtrar e ver o histórico de cada cliente |
 | Serviços | Catálogo: cadastrar, editar, desativar e excluir |
+| Profissionais | Equipe com função, telefone e % de comissão; produção, faturamento e comissão do mês |
+| Produtos | Catálogo com custo, preço de venda, margem e estoque mínimo |
+| Estoque | Entrada, saída e ajuste de contagem, alerta de estoque baixo e histórico de movimentações |
+| Configurações | Conta conectada + **Desconectar**, dados do estabelecimento, troca de senha, preferências, backup/restauração e exclusão da conta |
 | Pagamento | Aberta pelo Dashboard: clique duas vezes num atendimento **Pendente** |
-| Profissionais, Financeiro, Estoque, Produtos, Agenda | Em breve |
+| Financeiro, Agenda | Em breve |
 
 ## Dados
 
@@ -27,9 +31,11 @@ Os dados ficam em arquivos JSON no computador:
 
 ```
 %AppData%\Sallona\usuarios.json            contas (a senha é guardada só como hash PBKDF2)
-%AppData%\Sallona\contas\<id>\*.json       clientes, serviços, atendimentos e meta de cada conta
+%AppData%\Sallona\contas\<id>\*.json       clientes, serviços, atendimentos, profissionais, produtos, estoque e preferências
+%AppData%\Sallona\backups\                  cópia automática feita antes de restaurar um backup
 ```
 
+Em **Configurações → Backup e dados** dá para salvar um backup (.zip) e restaurá-lo.
 Para começar do zero, é só apagar a pasta `%AppData%\Sallona`.
 
 ## Como rodar
@@ -52,12 +58,18 @@ src/
 ├── Login/                tela de login, criar conta e contas (Usuario)
 ├── Clientes/             tela de Clientes, janela de cadastro e repositório
 ├── Servicos/             tela de Serviços, janela de cadastro e repositório
+├── Ui.cs                 peças de tela repetidas (cabeçalho, KPIs, tabela) usadas pelas páginas novas
 ├── Atendimentos/         atendimentos (modelo, repositório e janela "Novo atendimento")
+├── Profissionais/        equipe e comissões
+├── Produtos/             catálogo de produtos
+├── Estoque/              movimentações de estoque
+├── Configuracoes/        conta, preferências e backup
 └── Pagamentos/           tela de pagamento de um atendimento
 ```
 
 Cada módulo acessa os dados por um **repositório** (`Repositorios.Clientes`, `Repositorios.Servicos`,
-`Repositorios.Atendimentos`, `Repositorios.Configuracao`).
+`Repositorios.Atendimentos`, `Repositorios.Profissionais`, `Repositorios.Produtos`,
+`Repositorios.Estoque`, `Repositorios.Configuracao`). Os cadastros novos usam `RepositorioJson<T>`.
 Quando o banco MySQL estiver pronto, basta trocar o que tem dentro dos repositórios — as telas não mudam.
 
 ## Regras do grupo

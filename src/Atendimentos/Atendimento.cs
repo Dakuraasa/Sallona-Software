@@ -1,4 +1,4 @@
-namespace dashboardforms;
+﻿namespace dashboardforms;
 
 // ===== Modelo: um atendimento (um cliente, um ou mais serviços) =====
 public class Atendimento
@@ -6,6 +6,7 @@ public class Atendimento
     public int Id { get; set; }
     public int ClienteId { get; set; }
     public string ClienteNome { get; set; } = "";     // guardado para o histórico não mudar se o cadastro mudar
+    public int ProfissionalId { get; set; }            // 0 = atendimento antigo (só com o nome)
     public string Profissional { get; set; } = "";
     public DateTime Data { get; set; } = DateTime.Now;
     public List<ItemAtendimento> Itens { get; set; } = new();
@@ -47,6 +48,11 @@ class AtendimentoRepositorio
 
     public List<Atendimento> DoCliente(int clienteId) =>
         atendimentos.Where(a => a.ClienteId == clienteId).OrderByDescending(a => a.Data).Select(a => a.Copia()).ToList();
+
+    public List<Atendimento> DoProfissional(Profissional p) =>
+        atendimentos.Where(a => a.ProfissionalId == p.Id ||
+                                (a.ProfissionalId == 0 && string.Equals(a.Profissional, p.Nome, StringComparison.CurrentCultureIgnoreCase)))
+                    .Select(a => a.Copia()).ToList();
 
     public bool UsaServico(string nome) =>
         atendimentos.Any(a => a.Itens.Any(i => string.Equals(i.Servico, nome, StringComparison.CurrentCultureIgnoreCase)));

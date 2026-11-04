@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace dashboardforms;
 
@@ -59,6 +59,15 @@ static class Armazenamento
         File.Move(temp, arquivo, overwrite: true);
     }
 
+    // Grava um texto pronto (usado pela restauração de backup), também de forma segura
+    public static void SalvarTexto(string arquivo, string conteudo)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(arquivo)!);
+        string temp = arquivo + ".tmp";
+        File.WriteAllText(temp, conteudo);
+        File.Move(temp, arquivo, overwrite: true);
+    }
+
     // Executa uma gravação; se der erro, avisa em vez de fechar o programa.
     public static bool Tentar(IWin32Window? dono, Action acao)
     {
@@ -84,6 +93,9 @@ static class Repositorios
     public static ClienteRepositorio Clientes { get; private set; } = null!;
     public static AtendimentoRepositorio Atendimentos { get; private set; } = null!;
     public static ConfiguracaoRepositorio Configuracao { get; private set; } = null!;
+    public static ProfissionalRepositorio Profissionais { get; private set; } = null!;
+    public static ProdutoRepositorio Produtos { get; private set; } = null!;
+    public static EstoqueRepositorio Estoque { get; private set; } = null!;
 
     public static void Abrir(Usuario usuario)
     {
@@ -92,13 +104,19 @@ static class Repositorios
         Clientes = new ClienteRepositorio(pasta);
         Atendimentos = new AtendimentoRepositorio(pasta);
         Configuracao = new ConfiguracaoRepositorio(pasta);
+        Profissionais = new ProfissionalRepositorio(pasta);
+        Produtos = new ProdutoRepositorio(pasta);
+        Estoque = new EstoqueRepositorio(pasta);
     }
 }
 
-// ===== Preferências da conta (por enquanto, só a meta do mês) =====
+// ===== Preferências da conta (editadas em Configurações) =====
 class Configuracao
 {
     public decimal MetaMensal { get; set; }
+    public string PeriodoPadrao { get; set; } = "Mês";      // período que o Dashboard abre
+    public decimal ComissaoPadrao { get; set; }             // % sugerida ao cadastrar profissional
+    public int EstoqueMinimoPadrao { get; set; } = 2;       // sugerido ao cadastrar produto
 }
 
 class ConfiguracaoRepositorio
@@ -113,6 +131,17 @@ class ConfiguracaoRepositorio
     }
 
     public decimal MetaMensal => dados.MetaMensal;
+    public string PeriodoPadrao => dados.PeriodoPadrao;
+    public decimal ComissaoPadrao => dados.ComissaoPadrao;
+    public int EstoqueMinimoPadrao => dados.EstoqueMinimoPadrao;
+
+    public void SalvarPreferencias(decimal meta, string periodo, decimal comissao, int estoqueMinimo)
+    {
+        var antes = (dados.MetaMensal, dados.PeriodoPadrao, dados.ComissaoPadrao, dados.EstoqueMinimoPadrao);
+        (dados.MetaMensal, dados.PeriodoPadrao, dados.ComissaoPadrao, dados.EstoqueMinimoPadrao) = (meta, periodo, comissao, estoqueMinimo);
+        try { Armazenamento.Salvar(arquivo, dados); }
+        catch { (dados.MetaMensal, dados.PeriodoPadrao, dados.ComissaoPadrao, dados.EstoqueMinimoPadrao) = antes; throw; }
+    }
 
     public void DefinirMeta(decimal valor)
     {
