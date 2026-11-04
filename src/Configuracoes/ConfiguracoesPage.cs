@@ -9,7 +9,9 @@ namespace dashboardforms;
 // Depois: dados do estabelecimento, senha, preferências, backup e exclusão da conta.
 class ConfiguracoesPage : UserControl, IPagina
 {
-    const int Largura = 860;   // largura dos cartões (centralizados)
+    // largura fixa dos cartões (centralizados): cabe na janela no tamanho mínimo (1100 px)
+    const int Largura = 780;
+    const int LarguraCampo = 350, Coluna2 = 380;
 
     readonly Usuario usuario;
     readonly UsuarioRepositorio contas = new();
@@ -86,9 +88,9 @@ class ConfiguracoesPage : UserControl, IPagina
     }
 
     // rótulo + campo, posicionados em grade (coluna 0 ou 1)
-    static T Campo<T>(Panel corpo, string rotulo, T campo, int col, int linha, int largura = 380) where T : Control
+    static T Campo<T>(Panel corpo, string rotulo, T campo, int col, int linha, int largura = LarguraCampo) where T : Control
     {
-        int x = col * 410, y = linha * 62;
+        int x = col * Coluna2, y = linha * 62;
         corpo.Controls.Add(new Label { Text = rotulo, Location = new Point(x, y), AutoSize = true, ForeColor = Cores.Cinza, Font = Ui.Negrito, BackColor = Color.Transparent });
         campo.Location = new Point(x, y + 22);
         campo.Width = largura;
@@ -128,11 +130,9 @@ class ConfiguracoesPage : UserControl, IPagina
         var sair = Ui.Botao("⏻   Desconectar", Cores.Primaria, Color.White, 150);
         sair.Click += (_, _) => Desconectar?.Invoke();
         c.Controls.AddRange(new Control[] { avatar, lblSalao, lblInfoConta, conectado, sair });
-        c.Resize += (_, _) =>
-        {
-            sair.Location = new Point(c.Width - 24 - sair.Width, (c.Height - sair.Height) / 2 + 10);
-            conectado.Location = new Point(c.Width - 24 - conectado.Width, sair.Top - 26);
-        };
+        // o cartão tem largura fixa, então dá para posicionar direto (à direita)
+        sair.Location = new Point(Largura - 24 - sair.Width, 52);
+        conectado.Location = new Point(Largura - 24 - 90, 24);
         return c;
     }
 

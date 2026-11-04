@@ -1,4 +1,4 @@
-namespace dashboardforms;
+﻿namespace dashboardforms;
 
 // ===== Base das janelas de cadastro (cliente, atendimento, conta, meta) =====
 // Monta o visual padrão Sallona: título, campos um embaixo do outro, mensagem de erro
@@ -83,7 +83,16 @@ class Formulario : Form
 
             // altura da janela = soma dos campos (sem precisar calcular na mão em cada tela)
             int altura = corpo.Controls.Cast<Control>().Sum(c => c.Height + c.Margin.Vertical);
-            ClientSize = new Size(LarguraCampo + 32 + 52 + 8, Math.Min(altura + 32 + 38 + 8, 760));
+            var tela = Screen.FromPoint(Cursor.Position).WorkingArea;
+            // se não couber na tela (notebook 768px), a janela fica menor e os campos rolam
+            ClientSize = new Size(LarguraCampo + 32 + 52 + 8 + 18, Math.Min(altura + 32 + 38 + 8, tela.Height - 60));
+        };
+        // garante que a janela inteira (com os botões) fique dentro da tela
+        Shown += (_, _) =>
+        {
+            var tela = Screen.FromControl(this).WorkingArea;
+            Location = new Point(Math.Clamp(Left, tela.Left, Math.Max(tela.Left, tela.Right - Width)),
+                                 Math.Clamp(Top, tela.Top, Math.Max(tela.Top, tela.Bottom - Height)));
         };
     }
 

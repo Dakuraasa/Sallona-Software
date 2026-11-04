@@ -39,9 +39,9 @@ class EstoquePage : UserControl, IPagina
         chkSoBaixo.CheckedChanged += (_, _) => Recarregar();
         chkSoSelecionado.CheckedChanged += (_, _) => PreencherHistorico();
 
-        var entrada = Ui.Botao("+  Entrada", Cores.Verde, Color.White, 110);
-        var saida = Ui.Botao("−  Saída", Cores.Primaria, Color.White, 100);
-        var ajuste = Ui.Botao("Ajustar contagem", Cores.Escuro, Color.White, 150);
+        var entrada = Ui.Botao("+ Entrada", Cores.Verde, Color.White, 96);
+        var saida = Ui.Botao("− Saída", Cores.Primaria, Color.White, 86);
+        var ajuste = Ui.Botao("Ajustar", Cores.Escuro, Color.White, 86);
         entrada.Click += (_, _) => Movimentar(TipoMovimento.Entrada);
         saida.Click += (_, _) => Movimentar(TipoMovimento.Saida);
         ajuste.Click += (_, _) => Movimentar(TipoMovimento.Ajuste);
@@ -49,7 +49,7 @@ class EstoquePage : UserControl, IPagina
         var raiz = Ui.Raiz(64, 124, 0);
         raiz.ColumnStyles[0] = new ColumnStyle(SizeType.Percent, 55);
         raiz.ColumnStyles[1] = new ColumnStyle(SizeType.Percent, 45);
-        var cab = Ui.Cabecalho("Estoque", Ui.Busca("Buscar produto...", t => { busca = t; Recarregar(); }), chkSoBaixo, entrada, saida, ajuste);
+        var cab = Ui.Cabecalho("Estoque", Ui.Busca("Buscar produto...", t => { busca = t; Recarregar(); }, 170), chkSoBaixo, entrada, saida, ajuste);
         raiz.Controls.Add(cab, 0, 0); raiz.SetColumnSpan(cab, 2);
 
         var kpis = Ui.Kpis(new[] { "Estoque baixo", "Valor em estoque", "Entradas no mês", "Saídas no mês" }, out kpiValor, out kpiSub);
@@ -59,7 +59,7 @@ class EstoquePage : UserControl, IPagina
         cProd.Controls.Add(gridProdutos);
         cProd.Controls.Add(avisoVazio);
         cProd.Controls.Add(Ui.Titulo("Produtos em estoque"));
-        cProd.Controls.Add(Ui.Dica("Selecione um produto e use Entrada, Saída ou Ajustar contagem. Duplo clique = entrada."));
+        cProd.Controls.Add(Ui.Dica("Selecione um produto e use Entrada, Saída ou Ajustar (corrigir a contagem). Duplo clique = entrada."));
         raiz.Controls.Add(cProd, 0, 2);
 
         var cHist = Ui.Cartao();

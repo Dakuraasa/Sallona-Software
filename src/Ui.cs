@@ -89,10 +89,10 @@ static class Ui
     public static BotaoAnimado BotaoPrincipal(string texto, int largura = 150) => Botao(texto, Cores.Escuro, Color.White, largura);
 
     // Caixa de busca arredondada (igual à do Dashboard)
-    public static Card Busca(string dica, Action<string> aoDigitar)
+    public static Card Busca(string dica, Action<string> aoDigitar, int largura = 210)
     {
-        var caixa = new Card { Raio = 17, Size = new Size(210, 34), Padding = new Padding(0), Margin = new Padding(0, 0, 8, 0) };
-        var txt = new TextBox { BorderStyle = BorderStyle.None, PlaceholderText = dica, Font = new Font("Segoe UI", 10f), Location = new Point(14, 9), Width = 180 };
+        var caixa = new Card { Raio = 17, Size = new Size(largura, 34), Padding = new Padding(0), Margin = new Padding(0, 0, 8, 0) };
+        var txt = new TextBox { BorderStyle = BorderStyle.None, PlaceholderText = dica, Font = new Font("Segoe UI", 10f), Location = new Point(14, 9), Width = largura - 30 };
         txt.TextChanged += (_, _) => aoDigitar(txt.Text.Trim());
         caixa.Controls.Add(txt);
         return caixa;

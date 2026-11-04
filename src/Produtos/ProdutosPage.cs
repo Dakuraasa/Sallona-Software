@@ -42,7 +42,7 @@ class ProdutosPage : UserControl, IPagina
         novo.Click += (_, _) => Novo();
 
         var raiz = Ui.Raiz(64, 124, 0);
-        var cab = Ui.Cabecalho("Produtos", Ui.Busca("Buscar produto ou marca...", t => { busca = t; Recarregar(); }), cbCategoria, novo);
+        var cab = Ui.Cabecalho("Produtos", Ui.Busca("Buscar produto ou marca...", t => { busca = t; Recarregar(); }, 190), cbCategoria, novo);
         raiz.Controls.Add(cab, 0, 0); raiz.SetColumnSpan(cab, 2);
 
         var kpis = Ui.Kpis(new[] { "Produtos ativos", "Valor em estoque", "Estoque baixo", "Margem média" }, out kpiValor, out kpiSub);
