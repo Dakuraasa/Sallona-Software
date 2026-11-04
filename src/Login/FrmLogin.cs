@@ -103,12 +103,9 @@ namespace dashboardforms.Login
                     new Font("Georgia", 40F, FontStyle.Italic), corVinho, ContentAlignment.MiddleCenter);
             }
 
-            CriarLabel(pnlEsquerdo, "Instituto de Beleza\nDany Ribeiro", 50, 370, 400, 80,
-                new Font("Georgia", 20F), corTexto, ContentAlignment.TopCenter);
-
             CriarLabel(pnlEsquerdo,
                 "Clientes, serviços, atendimentos e financeiro do salão em um só lugar.",
-                70, 462, 360, 60, new Font("Segoe UI", 10F), corCinza, ContentAlignment.TopCenter);
+                70, 380, 360, 60, new Font("Segoe UI", 10F), corCinza, ContentAlignment.TopCenter);
 
             CriarLabel(pnlEsquerdo, "Sistema desenvolvido pelo Grupo SinapsES", 0, 596, 500, 24,
                 new Font("Segoe UI", 9F), corCinza, ContentAlignment.MiddleCenter);
