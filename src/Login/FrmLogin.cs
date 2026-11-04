@@ -1,46 +1,52 @@
-﻿using dashboardforms;
-using dashboardforms.Login;
-using System;
-using System.Drawing;
-using System.Drawing.Drawing2D;
+﻿using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.IO;
-using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
-namespace TelaLogin
+namespace dashboardforms.Login
 {
+    // ===== Tela de login: é a primeira coisa que aparece ao abrir o programa =====
+    // Se o login der certo, ela fecha com DialogResult.OK e o Program abre o Dashboard
+    // com a conta que entrou (propriedade Usuario).
     public class FrmLogin : Form
     {
-        Color corFundo = ColorTranslator.FromHtml("#F5EAE8");
-        Color corRosa = ColorTranslator.FromHtml("#B04A66");
+        // cores da paleta Sallona (controles.cs), para ficar igual ao resto do sistema
+        Color corFundo = Cores.Fundo;
+        Color corRosa = Cores.Primaria;
         Color corRosaEscuro = ColorTranslator.FromHtml("#983E58");
         Color corRosaClaro = ColorTranslator.FromHtml("#EBCFD6");
-        Color corVinho = ColorTranslator.FromHtml("#2A0710");
-        Color corTexto = ColorTranslator.FromHtml("#2B1B3A");
-        Color corCinza = ColorTranslator.FromHtml("#7D7280");
-        Color corBorda = ColorTranslator.FromHtml("#E6D5D8");
-        Color corErro = ColorTranslator.FromHtml("#B3263E");
+        Color corVinho = Cores.Escuro;
+        Color corTexto = Cores.Texto;
+        Color corCinza = Cores.Cinza;
+        Color corBorda = Cores.Borda;
+        Color corErro = Cores.Vinho;
 
-        Panel pnlEsquerdo;
-        Panel pnlDireito;
-        BotaoArredondado btnEntrar;
-        BotaoArredondado btnProprietaria;
-        BotaoArredondado btnCliente;
-        PainelArredondado campoEmail;
-        PainelArredondado campoSenha;
-        TextBox txtEmail;
-        TextBox txtSenha;
-        Label lblMostrar;
-        Label lblErro;
-        CheckBox chkLembrar;
-        LinkLabel lnkEsqueci;
-        LinkLabel lnkCadastro;
+        readonly UsuarioRepositorio contas = new();
+
+        /// <summary>Conta que fez login (preenchida quando o login dá certo).</summary>
+        public Usuario? Usuario { get; private set; }
+
+        Panel pnlEsquerdo = null!;
+        Panel pnlDireito = null!;
+        BotaoArredondado btnEntrar = null!;
+        BotaoArredondado btnProprietaria = null!;
+        BotaoArredondado btnCliente = null!;
+        PainelArredondado campoEmail = null!;
+        PainelArredondado campoSenha = null!;
+        TextBox txtEmail = null!;
+        TextBox txtSenha = null!;
+        Label lblMostrar = null!;
+        Label lblErro = null!;
+        CheckBox chkLembrar = null!;
+        LinkLabel lnkEsqueci = null!;
+        LinkLabel lnkCadastro = null!;
 
         bool ehProprietaria = true;
 
         string arquivoEmail = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "Sallona", "ultimo_email.txt");
+
+        Label lblSubtitulo = null!;
 
         public FrmLogin()
         {
@@ -50,6 +56,9 @@ namespace TelaLogin
             MudarPerfil(true);
             CarregarEmail();
             AcceptButton = btnEntrar;
+
+            if (contas.Vazio)
+                lblSubtitulo.Text = "Primeiro acesso? Crie sua conta no link abaixo.";
         }
 
         void ConfigurarForm()
@@ -102,7 +111,7 @@ namespace TelaLogin
                 new Font("Georgia", 20F), corTexto, ContentAlignment.TopCenter);
 
             CriarLabel(pnlEsquerdo,
-                "Agenda, ficha capilar e financeiro do salão em um só lugar, com seus dados protegidos.",
+                "Clientes, serviços, atendimentos e financeiro do salão em um só lugar.",
                 70, 462, 360, 60, new Font("Segoe UI", 10F), corCinza, ContentAlignment.TopCenter);
 
             CriarLabel(pnlEsquerdo, "Sistema desenvolvido pelo Grupo SinapsES", 0, 596, 500, 24,
@@ -111,74 +120,51 @@ namespace TelaLogin
             pnlEsquerdo.Paint += DesenharArcos;
         }
 
-        string BuscarLogo()
+        // O logo.jpg é copiado para a pasta do programa (veja o .csproj)
+        static string BuscarLogo()
         {
-            try
-            {
-                string pastaExe = Application.StartupPath;
-                string[] extensoes = { "*.png", "*.jpg", "*.jpeg" };
-
-                DirectoryInfo pastaProjeto = new DirectoryInfo(pastaExe);
-                while (pastaProjeto != null && pastaProjeto.GetFiles("*.csproj").Length == 0)
-                    pastaProjeto = pastaProjeto.Parent;
-
-                DirectoryInfo[] locais = { new DirectoryInfo(pastaExe), pastaProjeto };
-
-                foreach (DirectoryInfo local in locais)
-                {
-                    if (local == null)
-                        continue;
-
-                    foreach (string extensao in extensoes)
-                    {
-                        foreach (FileInfo arquivo in local.GetFiles(extensao, SearchOption.AllDirectories))
-                        {
-                            string nome = arquivo.Name.ToLower();
-
-                            if (nome.Contains("logo") || nome.Contains("sallona"))
-                                return arquivo.FullName;
-                        }
-                    }
-                }
-            }
-            catch
-            {
-            }
-
-            return "";
+            string caminho = Path.Combine(AppContext.BaseDirectory, "logo.jpg");
+            return File.Exists(caminho) ? caminho : "";
         }
 
-        Bitmap RemoverFundoBranco(Bitmap original)
+        // Deixa o fundo branco do logo transparente.
+        // Usa LockBits (acesso direto aos bytes): GetPixel/SetPixel em 360 mil pixels deixava a abertura lenta.
+        static Bitmap RemoverFundoBranco(Bitmap original)
         {
             double escala = Math.Min(1.0, 600.0 / Math.Max(original.Width, original.Height));
-            int largura = (int)(original.Width * escala);
-            int altura = (int)(original.Height * escala);
+            int largura = Math.Max(1, (int)(original.Width * escala));
+            int altura = Math.Max(1, (int)(original.Height * escala));
 
-            Bitmap reduzido = new Bitmap(original, largura, altura);
-            Bitmap resultado = new Bitmap(largura, altura, PixelFormat.Format32bppArgb);
-
-            for (int y = 0; y < altura; y++)
+            var resultado = new Bitmap(largura, altura, PixelFormat.Format32bppArgb);
+            using (var g = Graphics.FromImage(resultado))
             {
-                for (int x = 0; x < largura; x++)
-                {
-                    Color cor = reduzido.GetPixel(x, y);
-                    int menor = Math.Min(cor.R, Math.Min(cor.G, cor.B));
-                    int alfa = 255;
-
-                    if (menor >= 245)
-                        alfa = 0;
-                    else if (menor > 215)
-                        alfa = (245 - menor) * 255 / 30;
-
-                    resultado.SetPixel(x, y, Color.FromArgb(alfa, cor.R, cor.G, cor.B));
-                }
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.DrawImage(original, 0, 0, largura, altura);
             }
 
-            reduzido.Dispose();
+            var area = new Rectangle(0, 0, largura, altura);
+            var dados = resultado.LockBits(area, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+            try
+            {
+                int total = Math.Abs(dados.Stride) * altura;
+                var bytes = new byte[total];
+                Marshal.Copy(dados.Scan0, bytes, 0, total);
+                for (int i = 0; i + 3 < total; i += 4)          // ordem dos bytes: B, G, R, A
+                {
+                    int menor = Math.Min(bytes[i], Math.Min(bytes[i + 1], bytes[i + 2]));
+                    if (menor >= 245) bytes[i + 3] = 0;
+                    else if (menor > 215) bytes[i + 3] = (byte)((245 - menor) * 255 / 30);
+                }
+                Marshal.Copy(bytes, 0, dados.Scan0, total);
+            }
+            finally
+            {
+                resultado.UnlockBits(dados);
+            }
             return resultado;
         }
 
-        void DesenharArcos(object sender, PaintEventArgs e)
+        void DesenharArcos(object? sender, PaintEventArgs e)
         {
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             Pen caneta = new Pen(corRosaClaro, 14);
@@ -206,7 +192,7 @@ namespace TelaLogin
             CriarLabel(pnlDireito, "Entrar no sistema", x, 55, largura, 50,
                 new Font("Georgia", 26F), corTexto, ContentAlignment.TopLeft);
 
-            CriarLabel(pnlDireito, "Acesse sua conta para continuar.", x, 108, largura, 24,
+            lblSubtitulo = CriarLabel(pnlDireito, "Acesse sua conta para continuar.", x, 108, largura, 24,
                 new Font("Segoe UI", 10F), corCinza, ContentAlignment.TopLeft);
 
             btnProprietaria = CriarAba("Proprietária", x, 150);
@@ -282,7 +268,7 @@ namespace TelaLogin
                 new Font("Segoe UI", 9F), corErro, ContentAlignment.TopLeft);
 
             CriarLabel(pnlDireito,
-                "Cada perfil só enxerga o que precisa. A sessão encerra após 15 minutos sem uso. Seus dados são tratados conforme a LGPD.",
+                "Cada conta tem os seus próprios dados, salvos neste computador. A senha é guardada de forma protegida (hash).",
                 x, 516, largura, 44, new Font("Segoe UI", 9F), corCinza, ContentAlignment.TopLeft);
 
             lnkCadastro = new LinkLabel();
@@ -303,7 +289,7 @@ namespace TelaLogin
             pnlDireito.Controls.Add(lnkCadastro);
         }
 
-        void lblMostrar_Click(object sender, EventArgs e)
+        void lblMostrar_Click(object? sender, EventArgs e)
         {
             txtSenha.UseSystemPasswordChar = !txtSenha.UseSystemPasswordChar;
 
@@ -315,7 +301,7 @@ namespace TelaLogin
             txtSenha.Focus();
         }
 
-        void btnEntrar_Click(object sender, EventArgs e)
+        void btnEntrar_Click(object? sender, EventArgs e)
         {
             string email = txtEmail.Text.Trim();
             string senha = txtSenha.Text;
@@ -326,9 +312,15 @@ namespace TelaLogin
                 return;
             }
 
-            if (!EmailValido(email))
+            if (!UsuarioRepositorio.EmailValido(email))
             {
                 MostrarErro("Digite um e-mail válido.", txtEmail);
+                return;
+            }
+
+            if (!ehProprietaria)
+            {
+                MostrarErro("A área do cliente ainda está em desenvolvimento.", txtEmail);
                 return;
             }
 
@@ -338,61 +330,49 @@ namespace TelaLogin
                 return;
             }
 
-            if (!Autenticar(email, senha))
+            var usuario = contas.Autenticar(email, senha);
+            if (usuario == null)
             {
                 txtSenha.Clear();
-                MostrarErro("E-mail ou senha incorretos.", txtSenha);
+                MostrarErro(contas.Vazio ? "Nenhuma conta cadastrada ainda. Clique em \"Cadastre-se\"."
+                                         : "E-mail ou senha incorretos.", txtSenha);
                 return;
             }
 
             lblErro.Text = "";
             SalvarEmail(email);
-            AbrirTelaPrincipal();
+            Usuario = usuario;
+            DialogResult = DialogResult.OK;   // o Program abre o Dashboard
+            Close();
         }
 
-        void lnkEsqueci_Click(object sender, EventArgs e)
+        void lnkEsqueci_Click(object? sender, EventArgs e)
         {
-            string email = txtEmail.Text.Trim();
-
-            if (!EmailValido(email))
-            {
-                MostrarErro("Digite seu e-mail para recuperar a senha.", txtEmail);
-                return;
-            }
-
+            // TODO: recuperação de senha por e-mail precisa de um servidor (fica para quando houver banco/servidor)
             MessageBox.Show(
-                "Se o e-mail " + email + " estiver cadastrado, você receberá as instruções para redefinir a senha.",
+                "A recuperação de senha por e-mail ainda não está disponível nesta versão.\n" +
+                "Se esquecer a senha, crie uma nova conta.",
                 "Recuperar senha", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        void lnkCadastro_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        void lnkCadastro_LinkClicked(object? sender, LinkLabelLinkClickedEventArgs e)
         {
-            MessageBox.Show("A tela de cadastro será ligada aqui.", "Cadastro",
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using var cadastro = new FrmCadastro(contas);
+            if (cadastro.ShowDialog(this) != DialogResult.OK || cadastro.Criado == null) return;
+
+            MudarPerfil(true);
+            txtEmail.Text = cadastro.Criado.Email;
+            txtSenha.Clear();
+            lblSubtitulo.Text = "Conta criada! Digite sua senha para entrar.";
+            txtSenha.Focus();
         }
 
-        bool Autenticar(string email, string senha)
-        {
-            if (ehProprietaria)
-                return email.ToLower() == "dany@sallona.com" && senha == "123456";
-
-            return email.ToLower() == "cliente@sallona.com" && senha == "123456";
-        }
-
-        void AbrirTelaPrincipal()
-        {
-            DashboardForm telaPrincipal = new DashboardForm();
-            Hide();
-            telaPrincipal.FormClosed += (s, e) => Close();
-            telaPrincipal.Show();
-        }
-
-        void btnProprietaria_Click(object sender, EventArgs e)
+        void btnProprietaria_Click(object? sender, EventArgs e)
         {
             MudarPerfil(true);
         }
 
-        void btnCliente_Click(object sender, EventArgs e)
+        void btnCliente_Click(object? sender, EventArgs e)
         {
             MudarPerfil(false);
         }
@@ -441,16 +421,6 @@ namespace TelaLogin
             return aba;
         }
 
-        bool EmailValido(string email)
-        {
-            int arroba = email.IndexOf('@');
-            if (arroba < 1)
-                return false;
-
-            int ponto = email.IndexOf('.', arroba);
-            return ponto > arroba + 1 && !email.EndsWith(".") && !email.Contains(" ");
-        }
-
         void MostrarErro(string mensagem, Control campo)
         {
             lblErro.Text = mensagem;
@@ -478,7 +448,7 @@ namespace TelaLogin
             {
                 if (chkLembrar.Checked)
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(arquivoEmail));
+                    Directory.CreateDirectory(Path.GetDirectoryName(arquivoEmail)!);
                     File.WriteAllText(arquivoEmail, email);
                 }
                 else if (File.Exists(arquivoEmail))

@@ -21,7 +21,7 @@ namespace dashboardforms.Login
         protected override void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-            g.Clear(Parent.BackColor);
+            g.Clear(Parent?.BackColor ?? BackColor);
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
             Rectangle area = new Rectangle(0, 0, Width - 1, Height - 1);

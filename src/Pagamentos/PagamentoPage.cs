@@ -5,7 +5,7 @@ namespace dashboardforms.Pagamentos;
 // ===== Página de Pagamento do atendimento =====
 // O visual (posições, cores, fontes) está no PagamentoPage.Designer.cs.
 // Aqui fica só a lógica. O Dashboard abre esta tela com Carregar(...) quando se clica
-// duas vezes em um atendimento pendente; os dados abaixo são só o exemplo do Designer.
+// duas vezes em um atendimento pendente.
 public partial class PagamentoPage : UserControl
 {
     static readonly CultureInfo Br = Formato.Br;           // mesmo padrão brasileiro do resto do sistema
@@ -21,17 +21,16 @@ public partial class PagamentoPage : UserControl
 
     // ---------- eventos para integrar com o resto do sistema ----------
     public event Action? VoltarSolicitado;                       // "Voltar" / "Cancelar e voltar"
-    public event Action<string, decimal>? PagamentoConfirmado;  // (forma, valor) -> gravar no banco
+    // Chamado ao confirmar: (forma, valor) -> grava; devolve false se não conseguiu gravar
+    // (aí a tela NÃO marca como pago).
+    public Func<string, decimal, bool>? AoConfirmar;
 
     // ---------- estado ----------
-    string cliente = "Júlia Reis";
-    string profissional = "Patrícia";
-    DateTime data = new(2026, 10, 21);
-    List<ServicoRealizado> servicos = new()
-    {
-        new("Coloração", "Cabelo · 2h", 320m),
-        new("Hidratação", "Cabelo · 1h", 90m),
-    };
+    // começa vazio: os dados reais chegam por Carregar(...)
+    string cliente = "";
+    string profissional = "";
+    DateTime data = DateTime.Today;
+    List<ServicoRealizado> servicos = new();
     Forma forma = Forma.Pix;
     bool pago;
 
@@ -87,7 +86,7 @@ public partial class PagamentoPage : UserControl
     void Atualizar()
     {
         // resumo
-        avatar.Iniciais = Iniciais(cliente);
+        avatar.Iniciais = cliente.Length == 0 ? "" : Iniciais(cliente);
         avatar.Invalidate();
         lblCliente.Text = cliente;
         lblSubCliente.Text = $"{data:dd/MM/yyyy} · Profissional: {profissional}";
@@ -194,9 +193,9 @@ public partial class PagamentoPage : UserControl
             "Confirmar pagamento", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         if (resp != DialogResult.Yes) return;
 
+        if (AoConfirmar != null && !AoConfirmar(NomeForma(forma), Total)) return;   // não gravou: continua pendente
         pago = true;
         Atualizar();
-        PagamentoConfirmado?.Invoke(NomeForma(forma), Total);   // TODO: gravar no MySQL
     }
 
     // ================= utilitários =================

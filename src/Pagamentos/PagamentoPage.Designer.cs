@@ -179,7 +179,7 @@ namespace dashboardforms.Pagamentos
             lblCliente.ForeColor = Color.FromArgb(58, 26, 31);
             lblCliente.Location = new Point(80, 74);
             lblCliente.Name = "lblCliente";
-            lblCliente.Text = "Júlia Reis";
+            lblCliente.Text = "Cliente";
             //
             // lblSubCliente
             //
@@ -189,7 +189,7 @@ namespace dashboardforms.Pagamentos
             lblSubCliente.ForeColor = Color.FromArgb(142, 122, 125);
             lblSubCliente.Location = new Point(80, 98);
             lblSubCliente.Name = "lblSubCliente";
-            lblSubCliente.Text = "21/10/2026 · Profissional: Patrícia";
+            lblSubCliente.Text = "Data · Profissional";
             //
             // divResumo
             //
@@ -248,7 +248,7 @@ namespace dashboardforms.Pagamentos
             lblSubtotal.ForeColor = Color.FromArgb(142, 122, 125);
             lblSubtotal.Location = new Point(23, 18);
             lblSubtotal.Name = "lblSubtotal";
-            lblSubtotal.Text = "Subtotal · 2 serviços";
+            lblSubtotal.Text = "Subtotal · 0 serviços";
             //
             // lblSubtotalValor
             //
@@ -259,7 +259,7 @@ namespace dashboardforms.Pagamentos
             lblSubtotalValor.Location = new Point(334, 0);
             lblSubtotalValor.Name = "lblSubtotalValor";
             lblSubtotalValor.Size = new Size(200, 54);
-            lblSubtotalValor.Text = "R$ 410,00";
+            lblSubtotalValor.Text = "R$ 0,00";
             lblSubtotalValor.TextAlign = ContentAlignment.MiddleRight;
             //
             // blocoTotal
@@ -292,7 +292,7 @@ namespace dashboardforms.Pagamentos
             lblTotalSub.ForeColor = Color.FromArgb(217, 157, 143);
             lblTotalSub.Location = new Point(23, 50);
             lblTotalSub.Name = "lblTotalSub";
-            lblTotalSub.Text = "Atendimento de Júlia Reis";
+            lblTotalSub.Text = "Atendimento";
             //
             // lblTotal
             //
@@ -303,7 +303,7 @@ namespace dashboardforms.Pagamentos
             lblTotal.Location = new Point(274, 0);
             lblTotal.Name = "lblTotal";
             lblTotal.Size = new Size(260, 95);
-            lblTotal.Text = "R$ 410,00";
+            lblTotal.Text = "R$ 0,00";
             lblTotal.TextAlign = ContentAlignment.MiddleRight;
             //
             // cardPagamento
@@ -462,7 +462,7 @@ namespace dashboardforms.Pagamentos
             lblValorReceber.Location = new Point(180, 344);
             lblValorReceber.Name = "lblValorReceber";
             lblValorReceber.Size = new Size(200, 36);
-            lblValorReceber.Text = "R$ 410,00";
+            lblValorReceber.Text = "R$ 0,00";
             lblValorReceber.TextAlign = ContentAlignment.MiddleRight;
             //
             // btnConfirmar

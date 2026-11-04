@@ -2,7 +2,7 @@
 
 namespace dashboardforms;
 
-public class ClientesPage : UserControl
+public class ClientesPage : UserControl, IPagina
 {
     // ---------- paleta: tudo vem de Cores (controles.cs) para ficar igual às outras telas ----------
     static readonly Color Primaria = Cores.Primaria;
@@ -24,7 +24,8 @@ public class ClientesPage : UserControl
     int PorPagina => Math.Max(1, linhas.Height / AlturaLinha);
 
     // Os clientes vêm do repositório compartilhado (Cliente.cs), como na tela de Serviços.
-    readonly List<Cliente> todos = Repositorios.Clientes.Todos();
+    List<Cliente> todos = new();
+    Dictionary<int, DateTime> visitas = new();   // última visita (atendimento pago) de cada cliente
 
     Cliente? selecionado;
     bool ordemAZ = true;
@@ -38,6 +39,8 @@ public class ClientesPage : UserControl
     readonly Label lblNome = new(), lblTelefone = new(), lblEmail = new(), lblVisita = new(), lblPillVisita = new();
     readonly AvatarIniciais avatarFicha = new() { Size = new Size(56, 56), BackColor = Color.White };
     Caixa ordenar = null!;
+    Caixa historico = null!;
+    Label editar = null!;
 
     public ClientesPage()
     {
@@ -57,7 +60,61 @@ public class ClientesPage : UserControl
        
         linhas.Resize += (_, _) => { if (PorPagina != porPaginaAtual) Aplicar(); };
 
+        Recarregar();
+    }
+
+    // Lê de novo os clientes e as visitas (chamado ao abrir a página e depois de cada alteração)
+    public void Recarregar()
+    {
+        todos = Repositorios.Clientes.Todos();
+        visitas = Repositorios.Atendimentos.UltimasVisitas();
         Aplicar();
+    }
+
+    DateTime? UltimaVisita(Cliente c) => visitas.TryGetValue(c.Id, out var d) ? d : null;
+
+    // ================= ações =================
+    void NovoCliente()
+    {
+        using var dlg = new ClienteDialog(null);
+        if (dlg.ShowDialog(FindForm()) != DialogResult.OK) return;
+        if (!Armazenamento.Tentar(FindForm(), () => Repositorios.Clientes.Adicionar(dlg.Resultado))) return;
+        busca.Text = "";
+        selecionado = dlg.Resultado;
+        Recarregar();
+    }
+
+    void EditarSelecionado()
+    {
+        if (selecionado is null) return;
+        using var dlg = new ClienteDialog(selecionado);
+        if (dlg.ShowDialog(FindForm()) != DialogResult.OK) return;
+        if (!Armazenamento.Tentar(FindForm(), () => Repositorios.Clientes.Atualizar(dlg.Resultado))) return;
+        selecionado = dlg.Resultado;
+        Recarregar();
+    }
+
+    void ExcluirSelecionado()
+    {
+        if (selecionado is null) return;
+        var r = MessageBox.Show(FindForm(), $"Excluir o cliente \"{selecionado.Nome}\"?\nEssa ação não pode ser desfeita.",
+            "Excluir cliente", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+        if (r != DialogResult.Yes) return;
+        if (!Armazenamento.Tentar(FindForm(), () => Repositorios.Clientes.Excluir(selecionado.Id))) return;
+        selecionado = null;
+        Recarregar();
+    }
+
+    void MostrarHistorico()
+    {
+        if (selecionado is null) return;
+        var lista = Repositorios.Atendimentos.DoCliente(selecionado.Id);
+        string texto = lista.Count == 0
+            ? "Este cliente ainda não tem atendimentos."
+            : string.Join("\n", lista.Take(20).Select(a =>
+                $"{a.Data:dd/MM/yyyy}  ·  {a.Descricao}  ·  {Formato.Dinheiro(a.Total)}  ·  {(a.Pago ? "Pago" : "Pendente")}"));
+        if (lista.Count > 20) texto += $"\n... e mais {lista.Count - 20} atendimento(s).";
+        MessageBox.Show(FindForm(), texto, $"Histórico de {selecionado.Nome}", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     // ================= cabeçalho =================
@@ -82,7 +139,7 @@ public class ClientesPage : UserControl
             Cursor = Cursors.Hand
         };
         botao.FlatAppearance.BorderSize = 0;
-        botao.Click += (_, _) => MessageBox.Show("TODO: abrir o cadastro de novo cliente");
+        botao.Click += (_, _) => NovoCliente();
         Formas.Arredondar(botao, 10);
 
         var direita = new Panel { Dock = DockStyle.Right, Width = 180, Padding = new Padding(0, 8, 0, 0) };
@@ -212,7 +269,7 @@ public class ClientesPage : UserControl
 
     Control Linha(Cliente c)
     {
-        bool sel = c == selecionado;
+        bool sel = c.Id == selecionado?.Id;
         var fundo = sel ? RosaClaro : Color.White;
 
         var l = new Panel { Dock = DockStyle.Top, Height = AlturaLinha, BackColor = fundo, Cursor = Cursors.Hand };
@@ -238,7 +295,7 @@ public class ClientesPage : UserControl
         });
         l.Controls.Add(Coluna(c.Nome, 73, 150, true));
         l.Controls.Add(Coluna(c.Telefone, 238, 170, false));
-        l.Controls.Add(Coluna(c.UltimaVisita?.ToString("dd/MM/yyyy") ?? "—", 422, 130, false));
+        l.Controls.Add(Coluna(UltimaVisita(c)?.ToString("dd/MM/yyyy") ?? "—", 422, 130, false));
         l.Controls.Add(new Label
         {
             Text = "›",
@@ -276,6 +333,11 @@ public class ClientesPage : UserControl
         lado.Controls.Add(card);
 
         var mais = Rotulo("•••", 8, FontStyle.Regular, Suave, 0, 20);
+        mais.Cursor = Cursors.Hand;
+        var menuMais = new ContextMenuStrip();
+        menuMais.Items.Add("Editar cadastro", null, (_, _) => EditarSelecionado());
+        menuMais.Items.Add("Excluir cliente", null, (_, _) => ExcluirSelecionado());
+        mais.Click += (_, _) => { if (selecionado != null) menuMais.Show(mais, new Point(0, mais.Height)); };
 
         Estilo(lblNome, 18, FontStyle.Regular, Texto, 24, 104, "Georgia");
         lblNome.AutoSize = false; lblNome.TextAlign = ContentAlignment.MiddleCenter;
@@ -293,12 +355,12 @@ public class ClientesPage : UserControl
         Estilo(lblEmail, 9.5f, FontStyle.Regular, Suave, 58, 216);
         Estilo(lblVisita, 9.5f, FontStyle.Regular, Suave, 24, 278);
 
-        var historico = BotaoContorno("🕘   Ver histórico", _ => MessageBox.Show("TODO: abrir o histórico do cliente"));
+        historico = BotaoContorno("🕘   Ver histórico", _ => MostrarHistorico());
         historico.Dock = DockStyle.None;
 
-        var editar = Rotulo("Editar cadastro", 9, FontStyle.Bold, Primaria, 0, 0);
+        editar = Rotulo("Editar cadastro", 9, FontStyle.Bold, Primaria, 0, 0);
         editar.AutoSize = false; editar.TextAlign = ContentAlignment.MiddleCenter; editar.Cursor = Cursors.Hand;
-        editar.Click += (_, _) => MessageBox.Show("TODO: editar o cadastro do cliente");
+        editar.Click += (_, _) => EditarSelecionado();
 
         card.Controls.AddRange(new Control[]
         {
@@ -333,7 +395,8 @@ public class ClientesPage : UserControl
         lblNome.Text = c?.Nome ?? "Nenhum cliente";
         lblTelefone.Text = c?.Telefone ?? "—";
         lblEmail.Text = c?.Email is { Length: > 0 } e ? e : "E-mail não informado";
-        var visita = c?.UltimaVisita?.ToString("dd/MM/yyyy") ?? "—";
+        var visita = c is null ? "—" : UltimaVisita(c)?.ToString("dd/MM/yyyy") ?? "Ainda não veio";
+        historico.Visible = editar.Visible = c is not null;
         lblVisita.Text = visita;
         lblPillVisita.Text = $"Última visita: {visita}";
     }
@@ -356,8 +419,8 @@ public class ClientesPage : UserControl
         var t = busca.Text.Trim();
         if (t.Length > 0)
             q = q.Where(c => c.Nome.Contains(t, StringComparison.CurrentCultureIgnoreCase) || c.Telefone.Contains(t));
-        if (filtroVisita == 1) q = q.Where(c => c.UltimaVisita >= limite);
-        if (filtroVisita == 2) q = q.Where(c => c.UltimaVisita is null || c.UltimaVisita < limite);
+        if (filtroVisita == 1) q = q.Where(c => UltimaVisita(c) >= limite);
+        if (filtroVisita == 2) q = q.Where(c => UltimaVisita(c) is not DateTime d || d < limite);
 
         q = ordemAZ ? q.OrderBy(c => c.Nome, StringComparer.CurrentCultureIgnoreCase)
                     : q.OrderByDescending(c => c.Nome, StringComparer.CurrentCultureIgnoreCase);
@@ -369,8 +432,8 @@ public class ClientesPage : UserControl
         pagina = Math.Clamp(pagina, 1, totalPaginas);
         var visiveis = lista.Skip((pagina - 1) * porPagina).Take(porPagina).ToList();
 
-        if (selecionado is null || !lista.Contains(selecionado))
-            selecionado = visiveis.FirstOrDefault();
+        // mantém o cliente selecionado (pelo Id) ou escolhe o primeiro da página
+        selecionado = lista.FirstOrDefault(c => c.Id == selecionado?.Id) ?? visiveis.FirstOrDefault();
 
   
         linhas.SuspendLayout();

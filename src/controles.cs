@@ -2,6 +2,12 @@
 
 namespace dashboardforms;
 
+// ===== Páginas do menu que sabem se atualizar quando voltam a aparecer =====
+interface IPagina
+{
+    void Recarregar();
+}
+
 // ===== Paleta Sallona =====
 static class Cores
 {
@@ -145,6 +151,7 @@ class GraficoBarras : Control
     public string[] Rotulos = Array.Empty<string>();
     public float[] Valores = Array.Empty<float>();
     public int Destaque = -1;
+    public string Vazio = "Nenhum valor neste período";   // texto quando tudo é zero
     int hover = -1;
 
     float progresso = 1f;
@@ -195,17 +202,34 @@ class GraficoBarras : Control
 
         var a = Area;
         float max = Valores.Max();
-        float passo = (float)Math.Pow(10, Math.Floor(Math.Log10(Math.Max(1, max))));
-        float topo = (float)Math.Ceiling(max / passo) * passo;
         using var fonte = new Font("Segoe UI", 8.5f);
         using var pincelTxt = new SolidBrush(Cores.Cinza);
         using var linha = new Pen(Color.FromArgb(235, 225, 223));
+
+        // Sem nenhum valor: mostra só o aviso (antes dividia por zero ao calcular a altura das barras)
+        if (max <= 0)
+        {
+            g.DrawLine(linha, a.X, a.Bottom, a.Right, a.Bottom);
+            TextRenderer.DrawText(g, Vazio, fonte, a, Cores.Cinza,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak);
+            float sw = a.Width / (float)Valores.Length;
+            for (int i = 0; i < Rotulos.Length && i < Valores.Length; i++)
+            {
+                var s0 = g.MeasureString(Rotulos[i], fonte);
+                g.DrawString(Rotulos[i], fonte, pincelTxt, a.X + sw * i + sw / 2 - s0.Width / 2, a.Bottom + 8);
+            }
+            return;
+        }
+
+        float passo = (float)Math.Pow(10, Math.Floor(Math.Log10(Math.Max(1, max))));
+        float topo = (float)Math.Ceiling(max / passo) * passo;
 
         for (int k = 0; k <= 4; k++)
         {
             float y = a.Bottom - a.Height * k / 4f;
             g.DrawLine(linha, a.X, y, a.Right, y);
-            string t = $"{topo * k / 4000f:0.#}k";
+            float v = topo * k / 4f;
+            string t = topo >= 1000 ? (v / 1000f).ToString("0.#", Formato.Br) + "k" : v.ToString("0", Formato.Br);
             var sz = g.MeasureString(t, fonte);
             g.DrawString(t, fonte, pincelTxt, a.X - sz.Width - 6, y - sz.Height / 2);
         }
@@ -226,12 +250,13 @@ class GraficoBarras : Control
 
             using var fn = new Font("Segoe UI", 9f, i == ativo ? FontStyle.Bold : FontStyle.Regular);
             using var bt = new SolidBrush(i == ativo ? Cores.Escuro : Cores.Cinza);
-            var s = g.MeasureString(Rotulos[i], fn);
-            g.DrawString(Rotulos[i], fn, bt, x + larg / 2 - s.Width / 2, a.Bottom + 8);
+            string rot = i < Rotulos.Length ? Rotulos[i] : "";
+            var s = g.MeasureString(rot, fn);
+            g.DrawString(rot, fn, bt, x + larg / 2 - s.Width / 2, a.Bottom + 8);
 
             if (i == ativo)
             {
-                string v = $"R$ {Valores[i]:N0}";
+                string v = Formato.Dinheiro((decimal)Valores[i]);
                 using var fv = new Font("Segoe UI", 9f, FontStyle.Bold);
                 var sv = g.MeasureString(v, fv);
                 g.DrawString(v, fv, bt, x + larg / 2 - sv.Width / 2, r.Y - sv.Height - 2);
@@ -244,6 +269,7 @@ class GraficoBarras : Control
 class ListaProgresso : Control
 {
     public List<(string Nome, int Pct, Color Cor)> Itens = new();
+    public string Vazio = "Nada para mostrar ainda";   // texto quando a lista está vazia
 
     public ListaProgresso()
     {
@@ -256,8 +282,14 @@ class ListaProgresso : Control
     {
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        if (Itens.Count == 0) return;
-        float linhaH = Height / (float)Itens.Count;
+        if (Itens.Count == 0)
+        {
+            using var fv = new Font("Segoe UI", 9.5f);
+            TextRenderer.DrawText(g, Vazio, fv, ClientRectangle, Cores.Cinza,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak);
+            return;
+        }
+        float linhaH = Math.Min(48, Height / (float)Itens.Count);
         using var f = new Font("Segoe UI", 9.5f);
         using var fb = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         using var t = new SolidBrush(Cores.Texto);

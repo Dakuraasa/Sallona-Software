@@ -11,11 +11,26 @@ como projeto final do curso Técnico em Informática.
 
 | Tela | Situação |
 |---|---|
-| Dashboard | Pronta (dados de exemplo) — faturamento, atendimentos, metas e alertas |
-| Clientes | Lista, busca, filtros e ficha do cliente (cadastro/edição ainda por fazer) |
-| Serviços | Catálogo completo: cadastrar, editar, desativar e excluir (salvo em JSON) |
+| Login | Primeira tela ao abrir. Cada conta é criada em "Cadastre-se" e tem os próprios dados |
+| Dashboard | Faturamento, atendimentos, novos clientes, ticket médio, gráfico e meta — tudo calculado dos dados da conta |
+| Clientes | Cadastrar, editar, excluir, buscar, filtrar e ver o histórico de cada cliente |
+| Serviços | Catálogo: cadastrar, editar, desativar e excluir |
 | Pagamento | Aberta pelo Dashboard: clique duas vezes num atendimento **Pendente** |
 | Profissionais, Financeiro, Estoque, Produtos, Agenda | Em breve |
+
+## Dados
+
+Ainda **não há banco de dados**. Nada vem preenchido: o programa começa zerado e quem cadastra
+clientes, serviços, atendimentos e a meta do mês é a pessoa que fez login.
+
+Os dados ficam em arquivos JSON no computador:
+
+```
+%AppData%\Sallona\usuarios.json            contas (a senha é guardada só como hash PBKDF2)
+%AppData%\Sallona\contas\<id>\*.json       clientes, serviços, atendimentos e meta de cada conta
+```
+
+Para começar do zero, é só apagar a pasta `%AppData%\Sallona`.
 
 ## Como rodar
 
@@ -29,15 +44,20 @@ Pela linha de comando: `cd src` e depois `dotnet run`.
 
 ```
 src/
-├── Program.cs            ponto de entrada
+├── Program.cs            ponto de entrada: Login -> Dashboard (e "Sair" volta ao Login)
 ├── dashboardforms.cs     janela principal: menu lateral, Dashboard e troca de páginas
 ├── controles.cs          paleta de cores (Cores) e controles visuais compartilhados
-├── Clientes/             tela de Clientes + modelo/repositório de clientes
-├── Servicos/             tela, janela de cadastro e repositório de serviços
+├── Formulario.cs         base das janelas de cadastro (campos + Salvar/Cancelar)
+├── Dados/                onde os dados ficam salvos (JSON por conta) e Repositorios
+├── Login/                tela de login, criar conta e contas (Usuario)
+├── Clientes/             tela de Clientes, janela de cadastro e repositório
+├── Servicos/             tela de Serviços, janela de cadastro e repositório
+├── Atendimentos/         atendimentos (modelo, repositório e janela "Novo atendimento")
 └── Pagamentos/           tela de pagamento de um atendimento
 ```
 
-Cada módulo acessa os dados por um **repositório** (`Repositorios.Servicos`, `Repositorios.Clientes`).
+Cada módulo acessa os dados por um **repositório** (`Repositorios.Clientes`, `Repositorios.Servicos`,
+`Repositorios.Atendimentos`, `Repositorios.Configuracao`).
 Quando o banco MySQL estiver pronto, basta trocar o que tem dentro dos repositórios — as telas não mudam.
 
 ## Regras do grupo

@@ -5,9 +5,9 @@ namespace dashboardforms;
 // ===== Página de Serviços: catálogo com preço, duração e categoria =====
 // TODO (melhoria futura): quando houver login, só o gerente poderá editar preço,
 // desativar ou excluir; funcionários apenas visualizam.
-class ServicosPage : UserControl
+class ServicosPage : UserControl, IPagina
 {
-    readonly ServicoRepositorio repo = Repositorios.Servicos;
+    static ServicoRepositorio repo => Repositorios.Servicos;
     readonly DataTable tabela = new();
     readonly DataGridView grid = new();
     readonly Label[] kpiValor = new Label[4];
@@ -323,23 +323,12 @@ class ServicosPage : UserControl
         Atualizar();
     }
 
-    // Executa uma ação do repositório; se der erro ao gravar o arquivo, avisa em vez de fechar o programa.
-    bool Tentar(Action acao)
-    {
-        try
-        {
-            acao();
-            return true;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
-        {
-            MessageBox.Show(FindForm(), "Não foi possível salvar a alteração.\n\n" + ex.Message,
-                "Sallona", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            return false;
-        }
-    }
+    bool Tentar(Action acao) => Armazenamento.Tentar(FindForm(), acao);
 
     // ---------- Atualização da tela ----------
+    // Chamado pelo menu sempre que a página volta a aparecer
+    public void Recarregar() => Atualizar();
+
     void AplicarFiltro(string nome, int? selecionar = null)
     {
         filtro = nome;
