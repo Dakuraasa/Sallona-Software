@@ -32,8 +32,9 @@ static class Formato
 // ===== Acesso aos dados compartilhado por todas as páginas =====
 static class Repositorios
 {
-    // A Agenda, o Financeiro etc. também vão usar esta mesma lista de serviços.
+    // A Agenda, o Financeiro etc. também vão usar estes mesmos repositórios.
     public static readonly ServicoRepositorio Servicos = new();
+    public static readonly ClienteRepositorio Clientes = new();
 }
 
 // ===== Repositório de serviços =====
@@ -67,15 +68,18 @@ class ServicoRepositorio
     {
         s.Id = servicos.Count == 0 ? 1 : servicos.Max(x => x.Id) + 1;
         servicos.Add(s.Copia());
-        Salvar();
+        try { Salvar(); }
+        catch { servicos.RemoveAt(servicos.Count - 1); throw; }   // desfaz se não conseguiu gravar
     }
 
     public void Atualizar(Servico s)
     {
         int i = servicos.FindIndex(x => x.Id == s.Id);
         if (i < 0) return;
+        var antigo = servicos[i];
         servicos[i] = s.Copia();
-        Salvar();
+        try { Salvar(); }
+        catch { servicos[i] = antigo; throw; }
     }
 
     // Desativar em vez de apagar: o serviço some da hora de agendar,
@@ -84,8 +88,10 @@ class ServicoRepositorio
     {
         var s = servicos.FirstOrDefault(x => x.Id == id);
         if (s == null) return;
+        bool anterior = s.Ativo;
         s.Ativo = ativo;
-        Salvar();
+        try { Salvar(); }
+        catch { s.Ativo = anterior; throw; }
     }
 
     // TODO: quando existir a tabela de atendimentos, verificar se algum atendimento usa este serviço.
@@ -96,8 +102,12 @@ class ServicoRepositorio
     {
         if (PossuiAtendimentos(id))
             throw new InvalidOperationException("Este serviço já foi usado em atendimentos. Desative-o em vez de excluir.");
-        servicos.RemoveAll(x => x.Id == id);
-        Salvar();
+        int i = servicos.FindIndex(x => x.Id == id);
+        if (i < 0) return;
+        var removido = servicos[i];
+        servicos.RemoveAt(i);
+        try { Salvar(); }
+        catch { servicos.Insert(i, removido); throw; }
     }
 
     List<Servico> Carregar()
@@ -121,10 +131,15 @@ class ServicoRepositorio
         return exemplos;
     }
 
+    // Grava primeiro num arquivo temporário e só depois troca pelo oficial:
+    // se o programa cair no meio da gravação, o servicos.json antigo continua inteiro.
+    // Pode lançar IOException/UnauthorizedAccessException — a tela trata e avisa o usuário.
     void Salvar()
     {
         Directory.CreateDirectory(Pasta);
-        File.WriteAllText(Arquivo, JsonSerializer.Serialize(servicos, Opcoes));
+        string temp = Arquivo + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(servicos, Opcoes));
+        File.Move(temp, Arquivo, overwrite: true);
     }
 
     static List<Servico> Exemplos()

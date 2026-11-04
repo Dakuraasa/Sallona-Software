@@ -4,28 +4,27 @@ namespace dashboardforms;
 
 public class ClientesPage : UserControl
 {
-    // ---------- paleta (ajuste se alguma cor ficar diferente do protótipo) ----------
+    // ---------- paleta: tudo vem de Cores (controles.cs) para ficar igual às outras telas ----------
     static readonly Color Primaria = Cores.Primaria;
-    static readonly Color Texto = Color.FromArgb(43, 42, 76);
-    static readonly Color Suave = Color.FromArgb(120, 118, 135);
-    static readonly Color Borda = Color.FromArgb(232, 226, 223);
-    static readonly Color RosaClaro = Color.FromArgb(246, 232, 237);
-    static readonly Color AvatarFundo = Color.FromArgb(243, 220, 228);
+    static readonly Color Texto = Cores.Texto;
+    static readonly Color Suave = Cores.Cinza;
+    static readonly Color Borda = Cores.Borda;
+    static readonly Color RosaClaro = Cores.RosaClaro;
+    static readonly Color AvatarFundo = Cores.AvatarFundo;
 
     const int AlturaLinha = 72;
+
+    // Fontes das linhas da lista: criadas uma vez só e reaproveitadas
+    // (criar uma Font nova para cada linha a cada atualização vaza recursos do Windows).
+    static readonly Font FonteColuna = new("Segoe UI", 9.5F);
+    static readonly Font FonteColunaNegrito = new("Segoe UI", 9.5F, FontStyle.Bold);
+    static readonly Font FonteSeta = new("Segoe UI", 16F);
     int porPaginaAtual;
    
     int PorPagina => Math.Max(1, linhas.Height / AlturaLinha);
 
-    record Cliente(string Nome, string Telefone, string? Email, DateTime? UltimaVisita);
-
-    readonly List<Cliente> todos = new()
-    {
-        new("Maria Souza", "(27) 99999-0001", null, new DateTime(2026, 10, 14)),
-        new("Paulo Andre", "(27) 99999-0002", null, new DateTime(2026, 10, 15)),
-        new("Cleusa Maria", "(27) 99999-0003", null, new DateTime(2026, 10, 16)),
-        new("Pedro Henrique", "(27) 99999-0004", null, new DateTime(2026, 10, 17)),
-    };
+    // Os clientes vêm do repositório compartilhado (Cliente.cs), como na tela de Serviços.
+    readonly List<Cliente> todos = Repositorios.Clientes.Todos();
 
     Cliente? selecionado;
     bool ordemAZ = true;
@@ -247,7 +246,7 @@ public class ClientesPage : UserControl
             Width = 50,
             TextAlign = ContentAlignment.MiddleCenter,
             ForeColor = Primaria,
-            Font = new Font("Segoe UI", 16F),
+            Font = FonteSeta,
             BackColor = Color.Transparent
         });
 
@@ -266,7 +265,7 @@ public class ClientesPage : UserControl
         TextAlign = ContentAlignment.MiddleLeft,
         ForeColor = Texto,
         BackColor = Color.Transparent,
-        Font = new Font("Segoe UI", 9.5F, negrito ? FontStyle.Bold : FontStyle.Regular)
+        Font = negrito ? FonteColunaNegrito : FonteColuna
     };
 
     // ================= ficha do cliente =================
@@ -392,11 +391,7 @@ public class ClientesPage : UserControl
     }
 
     // ================= utilitários =================
-    static string Iniciais(string nome)
-    {
-        var partes = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return string.Concat(partes.Take(2).Select(p => char.ToUpper(p[0])));
-    }
+    static string Iniciais(string nome) => Util.Iniciais(nome);
 
     static void Estilo(Label l, float tam, FontStyle estilo, Color cor, int x, int y, string fonte = "Segoe UI")
     {
@@ -432,84 +427,5 @@ public class ClientesPage : UserControl
         caixa.Click += (_, _) => aoClicar(caixa);
         rotulo.Click += (_, _) => aoClicar(caixa);
         return caixa;
-    }
-}
-
-// ---------- controles auxiliares ----------
-
-
-class Caixa : Panel
-{
-    public int Raio { get; set; } = 14;
-    public Color Preenchimento { get; set; } = Color.White;
-    public Color Borda { get; set; } = Color.FromArgb(232, 226, 223);
-
-    public Caixa()
-    {
-        DoubleBuffered = true;
-        ResizeRedraw = true;
-        BackColor = Color.Transparent;
-    }
-
-    protected override void OnPaint(PaintEventArgs e)
-    {
-        base.OnPaint(e);
-        if (Width < 2 || Height < 2) return;
-        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        using var caminho = Formas.Caminho(new Rectangle(0, 0, Width - 1, Height - 1), Raio);
-        using var pincel = new SolidBrush(Preenchimento);
-        using var caneta = new Pen(Borda);
-        e.Graphics.FillPath(pincel, caminho);
-        e.Graphics.DrawPath(caneta, caminho);
-    }
-}
-
-// círculo com as iniciais do cliente
-class AvatarIniciais : Control
-{
-    public string Iniciais { get; set; } = "";
-    public Color Fundo { get; set; } = Color.FromArgb(243, 220, 228);
-    public Color Cor { get; set; } = Cores.Primaria;
-
-    public AvatarIniciais() => DoubleBuffered = true;
-
-    protected override void OnPaint(PaintEventArgs e)
-    {
-        base.OnPaint(e);
-        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        using var pincel = new SolidBrush(Fundo);
-        e.Graphics.FillEllipse(pincel, 0, 0, Width - 1, Height - 1);
-        using var fonte = new Font("Segoe UI", Width / 4.2f, FontStyle.Bold);
-        TextRenderer.DrawText(e.Graphics, Iniciais, fonte, ClientRectangle, Cor,
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
-    }
-}
-
-static class Formas
-{
-    public static GraphicsPath Caminho(Rectangle r, int raio)
-    {
-        var p = new GraphicsPath();
-        int d = Math.Min(raio * 2, Math.Min(r.Width, r.Height));
-        if (d <= 0) { p.AddRectangle(r); return p; }
-        p.AddArc(r.X, r.Y, d, d, 180, 90);
-        p.AddArc(r.Right - d, r.Y, d, d, 270, 90);
-        p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
-        p.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
-        p.CloseFigure();
-        return p;
-    }
-
-    public static void Arredondar(Control c, int raio)
-    {
-        void Ajustar(object? s, EventArgs e)
-        {
-            if (c.Width < raio * 2 || c.Height < raio * 2) return;
-            c.Region?.Dispose();
-            using var caminho = Caminho(new Rectangle(0, 0, c.Width, c.Height), raio);
-            c.Region = new Region(caminho);
-        }
-        c.SizeChanged += Ajustar;
-        Ajustar(null, EventArgs.Empty);
     }
 }

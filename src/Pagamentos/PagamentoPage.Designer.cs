@@ -28,10 +28,10 @@ namespace dashboardforms.Pagamentos
             lblTitulo = new Label();
             lblSubtitulo = new Label();
             etapas = new Etapas();
-            cardResumo = new dashboardforms.Clientes.Caixa();
+            cardResumo = new Caixa();
             lblResumoTitulo = new Label();
             lblIconeRecibo = new Label();
-            avatar = new dashboardforms.Clientes.AvatarIniciais();
+            avatar = new AvatarIniciais();
             lblCliente = new Label();
             lblSubCliente = new Label();
             divResumo = new Panel();
@@ -45,14 +45,14 @@ namespace dashboardforms.Pagamentos
             lblTotalTitulo = new Label();
             lblTotalSub = new Label();
             lblTotal = new Label();
-            cardPagamento = new dashboardforms.Clientes.Caixa();
+            cardPagamento = new Caixa();
             lblFormaTitulo = new Label();
             lblFormaSub = new Label();
             opcDinheiro = new OpcaoPagamento();
             opcPix = new OpcaoPagamento();
             opcCartao = new OpcaoPagamento();
-            caixaInfo = new dashboardforms.Clientes.Caixa();
-            caixaValorRecebido = new dashboardforms.Clientes.Caixa();
+            caixaInfo = new Caixa();
+            caixaValorRecebido = new Caixa();
             txtRecebido = new TextBox();
             lblTroco = new Label();
             lblInfo = new Label();
@@ -78,10 +78,10 @@ namespace dashboardforms.Pagamentos
             lblVoltar.BackColor = Color.Transparent;
             lblVoltar.Cursor = Cursors.Hand;
             lblVoltar.Font = new Font("Segoe UI", 9F);
-            lblVoltar.ForeColor = Color.FromArgb(120, 118, 135);
+            lblVoltar.ForeColor = Color.FromArgb(142, 122, 125);
             lblVoltar.Location = new Point(36, 20);
             lblVoltar.Name = "lblVoltar";
-            lblVoltar.Text = "←   Voltar para a agenda";
+            lblVoltar.Text = "←   Voltar";
             lblVoltar.Click += lblVoltar_Click;
             lblVoltar.MouseEnter += lblVoltar_MouseEnter;
             lblVoltar.MouseLeave += lblVoltar_MouseLeave;
@@ -101,7 +101,7 @@ namespace dashboardforms.Pagamentos
             lblTitulo.AutoSize = true;
             lblTitulo.BackColor = Color.Transparent;
             lblTitulo.Font = new Font("Georgia", 26F);
-            lblTitulo.ForeColor = Color.FromArgb(43, 42, 76);
+            lblTitulo.ForeColor = Color.FromArgb(58, 26, 31);
             lblTitulo.Location = new Point(32, 76);
             lblTitulo.Name = "lblTitulo";
             lblTitulo.Text = "Pagamento do atendimento";
@@ -111,7 +111,7 @@ namespace dashboardforms.Pagamentos
             lblSubtitulo.AutoSize = true;
             lblSubtitulo.BackColor = Color.Transparent;
             lblSubtitulo.Font = new Font("Segoe UI", 9.5F);
-            lblSubtitulo.ForeColor = Color.FromArgb(120, 118, 135);
+            lblSubtitulo.ForeColor = Color.FromArgb(142, 122, 125);
             lblSubtitulo.Location = new Point(36, 132);
             lblSubtitulo.Name = "lblSubtitulo";
             lblSubtitulo.Text = "Confira os serviços e escolha como receber.";
@@ -145,7 +145,7 @@ namespace dashboardforms.Pagamentos
             lblResumoTitulo.AutoSize = true;
             lblResumoTitulo.BackColor = Color.Transparent;
             lblResumoTitulo.Font = new Font("Georgia", 15F);
-            lblResumoTitulo.ForeColor = Color.FromArgb(43, 42, 76);
+            lblResumoTitulo.ForeColor = Color.FromArgb(58, 26, 31);
             lblResumoTitulo.Location = new Point(24, 22);
             lblResumoTitulo.Name = "lblResumoTitulo";
             lblResumoTitulo.Text = "Resumo do atendimento";
@@ -176,7 +176,7 @@ namespace dashboardforms.Pagamentos
             lblCliente.AutoSize = true;
             lblCliente.BackColor = Color.Transparent;
             lblCliente.Font = new Font("Segoe UI", 10.5F, FontStyle.Bold);
-            lblCliente.ForeColor = Color.FromArgb(43, 42, 76);
+            lblCliente.ForeColor = Color.FromArgb(58, 26, 31);
             lblCliente.Location = new Point(80, 74);
             lblCliente.Name = "lblCliente";
             lblCliente.Text = "Júlia Reis";
@@ -186,10 +186,10 @@ namespace dashboardforms.Pagamentos
             lblSubCliente.AutoSize = true;
             lblSubCliente.BackColor = Color.Transparent;
             lblSubCliente.Font = new Font("Segoe UI", 8.5F);
-            lblSubCliente.ForeColor = Color.FromArgb(120, 118, 135);
+            lblSubCliente.ForeColor = Color.FromArgb(142, 122, 125);
             lblSubCliente.Location = new Point(80, 98);
             lblSubCliente.Name = "lblSubCliente";
-            lblSubCliente.Text = "21/10/2026 · Profissional: Bruna";
+            lblSubCliente.Text = "21/10/2026 · Profissional: Patrícia";
             //
             // divResumo
             //
@@ -204,7 +204,7 @@ namespace dashboardforms.Pagamentos
             lblColServicos.AutoSize = true;
             lblColServicos.BackColor = Color.Transparent;
             lblColServicos.Font = new Font("Segoe UI", 7.5F, FontStyle.Bold);
-            lblColServicos.ForeColor = Color.FromArgb(120, 118, 135);
+            lblColServicos.ForeColor = Color.FromArgb(142, 122, 125);
             lblColServicos.Location = new Point(24, 152);
             lblColServicos.Name = "lblColServicos";
             lblColServicos.Text = "SERVIÇOS REALIZADOS";
@@ -215,7 +215,7 @@ namespace dashboardforms.Pagamentos
             lblColValor.AutoSize = true;
             lblColValor.BackColor = Color.Transparent;
             lblColValor.Font = new Font("Segoe UI", 7.5F, FontStyle.Bold);
-            lblColValor.ForeColor = Color.FromArgb(120, 118, 135);
+            lblColValor.ForeColor = Color.FromArgb(142, 122, 125);
             lblColValor.Location = new Point(496, 152);
             lblColValor.Name = "lblColValor";
             lblColValor.Text = "VALOR";
@@ -245,7 +245,7 @@ namespace dashboardforms.Pagamentos
             lblSubtotal.AutoSize = true;
             lblSubtotal.BackColor = Color.Transparent;
             lblSubtotal.Font = new Font("Segoe UI", 9F);
-            lblSubtotal.ForeColor = Color.FromArgb(120, 118, 135);
+            lblSubtotal.ForeColor = Color.FromArgb(142, 122, 125);
             lblSubtotal.Location = new Point(23, 18);
             lblSubtotal.Name = "lblSubtotal";
             lblSubtotal.Text = "Subtotal · 2 serviços";
@@ -255,11 +255,11 @@ namespace dashboardforms.Pagamentos
             lblSubtotalValor.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             lblSubtotalValor.BackColor = Color.Transparent;
             lblSubtotalValor.Font = new Font("Segoe UI", 9F);
-            lblSubtotalValor.ForeColor = Color.FromArgb(120, 118, 135);
+            lblSubtotalValor.ForeColor = Color.FromArgb(142, 122, 125);
             lblSubtotalValor.Location = new Point(334, 0);
             lblSubtotalValor.Name = "lblSubtotalValor";
             lblSubtotalValor.Size = new Size(200, 54);
-            lblSubtotalValor.Text = "R$ 240,00";
+            lblSubtotalValor.Text = "R$ 410,00";
             lblSubtotalValor.TextAlign = ContentAlignment.MiddleRight;
             //
             // blocoTotal
@@ -270,7 +270,7 @@ namespace dashboardforms.Pagamentos
             blocoTotal.Controls.Add(lblTotal);
             blocoTotal.Location = new Point(1, 388);
             blocoTotal.Name = "blocoTotal";
-            blocoTotal.Preenchimento = Color.FromArgb(46, 48, 84);
+            blocoTotal.Preenchimento = Color.FromArgb(38, 1, 8);
             blocoTotal.Raio = 13;
             blocoTotal.Size = new Size(558, 95);
             //
@@ -289,7 +289,7 @@ namespace dashboardforms.Pagamentos
             lblTotalSub.AutoSize = true;
             lblTotalSub.BackColor = Color.Transparent;
             lblTotalSub.Font = new Font("Segoe UI", 8.5F);
-            lblTotalSub.ForeColor = Color.FromArgb(190, 192, 215);
+            lblTotalSub.ForeColor = Color.FromArgb(217, 157, 143);
             lblTotalSub.Location = new Point(23, 50);
             lblTotalSub.Name = "lblTotalSub";
             lblTotalSub.Text = "Atendimento de Júlia Reis";
@@ -303,7 +303,7 @@ namespace dashboardforms.Pagamentos
             lblTotal.Location = new Point(274, 0);
             lblTotal.Name = "lblTotal";
             lblTotal.Size = new Size(260, 95);
-            lblTotal.Text = "R$ 240,00";
+            lblTotal.Text = "R$ 410,00";
             lblTotal.TextAlign = ContentAlignment.MiddleRight;
             //
             // cardPagamento
@@ -329,7 +329,7 @@ namespace dashboardforms.Pagamentos
             lblFormaTitulo.AutoSize = true;
             lblFormaTitulo.BackColor = Color.Transparent;
             lblFormaTitulo.Font = new Font("Georgia", 15F);
-            lblFormaTitulo.ForeColor = Color.FromArgb(43, 42, 76);
+            lblFormaTitulo.ForeColor = Color.FromArgb(58, 26, 31);
             lblFormaTitulo.Location = new Point(24, 22);
             lblFormaTitulo.Name = "lblFormaTitulo";
             lblFormaTitulo.Text = "Forma de pagamento";
@@ -339,10 +339,10 @@ namespace dashboardforms.Pagamentos
             lblFormaSub.AutoSize = true;
             lblFormaSub.BackColor = Color.Transparent;
             lblFormaSub.Font = new Font("Segoe UI", 8.5F);
-            lblFormaSub.ForeColor = Color.FromArgb(120, 118, 135);
+            lblFormaSub.ForeColor = Color.FromArgb(142, 122, 125);
             lblFormaSub.Location = new Point(24, 54);
             lblFormaSub.Name = "lblFormaSub";
-            lblFormaSub.Text = "Selecione a forma utilizada pela cliente.";
+            lblFormaSub.Text = "Selecione como o pagamento foi feito.";
             //
             // opcDinheiro
             //
@@ -405,7 +405,7 @@ namespace dashboardforms.Pagamentos
             txtRecebido.BackColor = Color.White;
             txtRecebido.BorderStyle = BorderStyle.None;
             txtRecebido.Font = new Font("Segoe UI", 9.5F);
-            txtRecebido.ForeColor = Color.FromArgb(43, 42, 76);
+            txtRecebido.ForeColor = Color.FromArgb(58, 26, 31);
             txtRecebido.Location = new Point(10, 7);
             txtRecebido.Name = "txtRecebido";
             txtRecebido.PlaceholderText = "0,00";
@@ -417,7 +417,7 @@ namespace dashboardforms.Pagamentos
             lblTroco.AutoSize = true;
             lblTroco.BackColor = Color.Transparent;
             lblTroco.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            lblTroco.ForeColor = Color.FromArgb(120, 118, 135);
+            lblTroco.ForeColor = Color.FromArgb(142, 122, 125);
             lblTroco.Location = new Point(270, 19);
             lblTroco.Name = "lblTroco";
             lblTroco.Text = "Troco: —";
@@ -428,7 +428,7 @@ namespace dashboardforms.Pagamentos
             lblInfo.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             lblInfo.BackColor = Color.Transparent;
             lblInfo.Font = new Font("Segoe UI", 8.5F);
-            lblInfo.ForeColor = Color.FromArgb(120, 118, 135);
+            lblInfo.ForeColor = Color.FromArgb(142, 122, 125);
             lblInfo.Location = new Point(14, 8);
             lblInfo.Name = "lblInfo";
             lblInfo.Size = new Size(328, 40);
@@ -448,7 +448,7 @@ namespace dashboardforms.Pagamentos
             lblReceberVia.AutoSize = true;
             lblReceberVia.BackColor = Color.Transparent;
             lblReceberVia.Font = new Font("Segoe UI", 9F);
-            lblReceberVia.ForeColor = Color.FromArgb(120, 118, 135);
+            lblReceberVia.ForeColor = Color.FromArgb(142, 122, 125);
             lblReceberVia.Location = new Point(24, 356);
             lblReceberVia.Name = "lblReceberVia";
             lblReceberVia.Text = "Receber via Pix";
@@ -458,11 +458,11 @@ namespace dashboardforms.Pagamentos
             lblValorReceber.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             lblValorReceber.BackColor = Color.Transparent;
             lblValorReceber.Font = new Font("Segoe UI", 15F, FontStyle.Bold);
-            lblValorReceber.ForeColor = Color.FromArgb(43, 42, 76);
+            lblValorReceber.ForeColor = Color.FromArgb(58, 26, 31);
             lblValorReceber.Location = new Point(180, 344);
             lblValorReceber.Name = "lblValorReceber";
             lblValorReceber.Size = new Size(200, 36);
-            lblValorReceber.Text = "R$ 240,00";
+            lblValorReceber.Text = "R$ 410,00";
             lblValorReceber.TextAlign = ContentAlignment.MiddleRight;
             //
             // btnConfirmar
@@ -486,7 +486,7 @@ namespace dashboardforms.Pagamentos
             lblNota.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             lblNota.BackColor = Color.Transparent;
             lblNota.Font = new Font("Segoe UI", 8F);
-            lblNota.ForeColor = Color.FromArgb(120, 118, 135);
+            lblNota.ForeColor = Color.FromArgb(142, 122, 125);
             lblNota.Location = new Point(24, 444);
             lblNota.Name = "lblNota";
             lblNota.Size = new Size(356, 22);
@@ -499,10 +499,10 @@ namespace dashboardforms.Pagamentos
             lblCadeado.AutoSize = true;
             lblCadeado.BackColor = Color.Transparent;
             lblCadeado.Font = new Font("Segoe UI Emoji", 9F);
-            lblCadeado.ForeColor = Color.FromArgb(120, 118, 135);
+            lblCadeado.ForeColor = Color.FromArgb(142, 122, 125);
             lblCadeado.Location = new Point(36, 704);
             lblCadeado.Name = "lblCadeado";
-            lblCadeado.Text = "🔒";
+            lblCadeado.Text = "ⓘ";
             //
             // lblSeguranca
             //
@@ -510,10 +510,10 @@ namespace dashboardforms.Pagamentos
             lblSeguranca.AutoSize = true;
             lblSeguranca.BackColor = Color.Transparent;
             lblSeguranca.Font = new Font("Segoe UI", 8.5F);
-            lblSeguranca.ForeColor = Color.FromArgb(120, 118, 135);
+            lblSeguranca.ForeColor = Color.FromArgb(142, 122, 125);
             lblSeguranca.Location = new Point(60, 706);
             lblSeguranca.Name = "lblSeguranca";
-            lblSeguranca.Text = "Seus registros financeiros ficam salvos com segurança.";
+            lblSeguranca.Text = "Só confirme depois de receber o valor.";
             //
             // lblCancelar
             //
@@ -570,10 +570,10 @@ namespace dashboardforms.Pagamentos
         private Label lblTitulo;
         private Label lblSubtitulo;
         private Etapas etapas;
-        private dashboardforms.Clientes.Caixa cardResumo;
+        private Caixa cardResumo;
         private Label lblResumoTitulo;
         private Label lblIconeRecibo;
-        private dashboardforms.Clientes.AvatarIniciais avatar;
+        private AvatarIniciais avatar;
         private Label lblCliente;
         private Label lblSubCliente;
         private Panel divResumo;
@@ -587,14 +587,14 @@ namespace dashboardforms.Pagamentos
         private Label lblTotalTitulo;
         private Label lblTotalSub;
         private Label lblTotal;
-        private dashboardforms.Clientes.Caixa cardPagamento;
+        private Caixa cardPagamento;
         private Label lblFormaTitulo;
         private Label lblFormaSub;
         private OpcaoPagamento opcDinheiro;
         private OpcaoPagamento opcPix;
         private OpcaoPagamento opcCartao;
-        private dashboardforms.Clientes.Caixa caixaInfo;
-        private dashboardforms.Clientes.Caixa caixaValorRecebido;
+        private Caixa caixaInfo;
+        private Caixa caixaValorRecebido;
         private TextBox txtRecebido;
         private Label lblTroco;
         private Label lblInfo;

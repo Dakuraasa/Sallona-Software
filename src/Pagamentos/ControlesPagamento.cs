@@ -1,18 +1,17 @@
 using System.Drawing.Drawing2D;
-using dashboardforms.Clientes;   // Formas.Caminho
 
 namespace dashboardforms.Pagamentos;
 
-// Cores usadas pelos controles desta tela (iguais às da tela de Clientes)
+// Cores desta tela: atalhos para a paleta Sallona (Cores, em controles.cs)
 static class CoresPagamento
 {
-    public static readonly Color Primaria = Color.FromArgb(191, 65, 99);
-    public static readonly Color Texto = Color.FromArgb(43, 42, 76);
-    public static readonly Color Suave = Color.FromArgb(120, 118, 135);
-    public static readonly Color Borda = Color.FromArgb(232, 226, 223);
-    public static readonly Color RosaClaro = Color.FromArgb(246, 232, 237);
-    public static readonly Color Rosa = Color.FromArgb(217, 157, 143);
-    public static readonly Color Verde = Color.FromArgb(46, 158, 91);
+    public static readonly Color Primaria = Cores.Primaria;
+    public static readonly Color Texto = Cores.Texto;
+    public static readonly Color Suave = Cores.Cinza;
+    public static readonly Color Borda = Cores.Borda;
+    public static readonly Color RosaClaro = Cores.RosaClaro;
+    public static readonly Color Rosa = Cores.Rosa;
+    public static readonly Color Verde = Cores.Verde;
 }
 
 // ===== Opção de pagamento clicável (estilo "radio card") =====
@@ -154,7 +153,7 @@ class Etapas : Control
 class BlocoInferior : Panel
 {
     public int Raio { get; set; } = 13;
-    public Color Preenchimento { get; set; } = Color.FromArgb(46, 48, 84);
+    public Color Preenchimento { get; set; } = Cores.Escuro;
 
     public BlocoInferior()
     {

@@ -14,10 +14,22 @@ static class Cores
     public static readonly Color Texto = ColorTranslator.FromHtml("#3A1A1F");
     public static readonly Color Cinza = ColorTranslator.FromHtml("#8E7A7D");
     public static readonly Color Verde = ColorTranslator.FromHtml("#2E9E5B");
+
+    // tons claros usados em bordas, destaques e avatares
+    public static readonly Color Borda = Color.FromArgb(232, 226, 223);
+    public static readonly Color RosaClaro = Color.FromArgb(246, 232, 237);
+    public static readonly Color AvatarFundo = Color.FromArgb(243, 220, 228);
 }
 
 static class Util
 {
+    // "Camila Souza" -> "CS"
+    public static string Iniciais(string nome)
+    {
+        var partes = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Concat(partes.Take(2).Select(p => char.ToUpper(p[0])));
+    }
+
     public static GraphicsPath Arredondar(Rectangle r, int raio)
     {
         int d = raio * 2;
@@ -300,5 +312,83 @@ class ListaLinhas : Control
             g.DrawString(dir, f, bd, Width - sz.Width, y);
             y += 22;
         }
+    }
+}
+
+// ===== Controles compartilhados (usados em Clientes e Pagamento) =====
+
+class Caixa : Panel
+{
+    public int Raio { get; set; } = 14;
+    public Color Preenchimento { get; set; } = Color.White;
+    public Color Borda { get; set; } = Cores.Borda;
+
+    public Caixa()
+    {
+        DoubleBuffered = true;
+        ResizeRedraw = true;
+        BackColor = Color.Transparent;
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        if (Width < 2 || Height < 2) return;
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        using var caminho = Formas.Caminho(new Rectangle(0, 0, Width - 1, Height - 1), Raio);
+        using var pincel = new SolidBrush(Preenchimento);
+        using var caneta = new Pen(Borda);
+        e.Graphics.FillPath(pincel, caminho);
+        e.Graphics.DrawPath(caneta, caminho);
+    }
+}
+
+// círculo com as iniciais do cliente
+class AvatarIniciais : Control
+{
+    public string Iniciais { get; set; } = "";
+    public Color Fundo { get; set; } = Cores.AvatarFundo;
+    public Color Cor { get; set; } = Cores.Primaria;
+
+    public AvatarIniciais() => DoubleBuffered = true;
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        using var pincel = new SolidBrush(Fundo);
+        e.Graphics.FillEllipse(pincel, 0, 0, Width - 1, Height - 1);
+        using var fonte = new Font("Segoe UI", Width / 4.2f, FontStyle.Bold);
+        TextRenderer.DrawText(e.Graphics, Iniciais, fonte, ClientRectangle, Cor,
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+    }
+}
+
+static class Formas
+{
+    public static GraphicsPath Caminho(Rectangle r, int raio)
+    {
+        var p = new GraphicsPath();
+        int d = Math.Min(raio * 2, Math.Min(r.Width, r.Height));
+        if (d <= 0) { p.AddRectangle(r); return p; }
+        p.AddArc(r.X, r.Y, d, d, 180, 90);
+        p.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+        p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+        p.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+        p.CloseFigure();
+        return p;
+    }
+
+    public static void Arredondar(Control c, int raio)
+    {
+        void Ajustar(object? s, EventArgs e)
+        {
+            if (c.Width < raio * 2 || c.Height < raio * 2) return;
+            c.Region?.Dispose();
+            using var caminho = Caminho(new Rectangle(0, 0, c.Width, c.Height), raio);
+            c.Region = new Region(caminho);
+        }
+        c.SizeChanged += Ajustar;
+        Ajustar(null, EventArgs.Empty);
     }
 }

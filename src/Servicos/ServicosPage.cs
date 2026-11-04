@@ -281,7 +281,7 @@ class ServicosPage : UserControl
     {
         using var dlg = new ServicoDialog(null, nome => repo.NomeEmUso(nome, 0));
         if (dlg.ShowDialog(FindForm()) != DialogResult.OK) return;
-        repo.Adicionar(dlg.Resultado);
+        if (!Tentar(() => repo.Adicionar(dlg.Resultado))) return;
         busca.Text = "";
         // se o filtro atual esconderia o serviço novo, mostra todos
         if ((filtro == "Ativos") != dlg.Resultado.Ativo && filtro != "Todos") filtro = "Todos";
@@ -294,7 +294,7 @@ class ServicosPage : UserControl
         if (s == null) return;
         using var dlg = new ServicoDialog(s, nome => repo.NomeEmUso(nome, s.Id));
         if (dlg.ShowDialog(FindForm()) != DialogResult.OK) return;
-        repo.Atualizar(dlg.Resultado);
+        if (!Tentar(() => repo.Atualizar(dlg.Resultado))) return;
         Atualizar(s.Id);
     }
 
@@ -302,7 +302,7 @@ class ServicosPage : UserControl
     {
         var s = Selecionado();
         if (s == null) return;
-        repo.DefinirAtivo(s.Id, !s.Ativo);
+        if (!Tentar(() => repo.DefinirAtivo(s.Id, !s.Ativo))) return;
         Atualizar(s.Id);
     }
 
@@ -319,8 +319,24 @@ class ServicosPage : UserControl
         var r = MessageBox.Show(FindForm(), $"Excluir o serviço \"{s.Nome}\"?\nEssa ação não pode ser desfeita.",
             "Excluir serviço", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
         if (r != DialogResult.Yes) return;
-        repo.Excluir(s.Id);
+        if (!Tentar(() => repo.Excluir(s.Id))) return;
         Atualizar();
+    }
+
+    // Executa uma ação do repositório; se der erro ao gravar o arquivo, avisa em vez de fechar o programa.
+    bool Tentar(Action acao)
+    {
+        try
+        {
+            acao();
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            MessageBox.Show(FindForm(), "Não foi possível salvar a alteração.\n\n" + ex.Message,
+                "Sallona", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return false;
+        }
     }
 
     // ---------- Atualização da tela ----------

@@ -1,33 +1,36 @@
 using System.Globalization;
-using dashboardforms.Clientes;   // Formas.Arredondar
 
 namespace dashboardforms.Pagamentos;
 
 // ===== Página de Pagamento do atendimento =====
 // O visual (posições, cores, fontes) está no PagamentoPage.Designer.cs.
-// Aqui fica só a lógica. Os dados são de exemplo: depois chame Carregar(...)
-// com o atendimento vindo da Agenda / banco.
+// Aqui fica só a lógica. O Dashboard abre esta tela com Carregar(...) quando se clica
+// duas vezes em um atendimento pendente; os dados abaixo são só o exemplo do Designer.
 public partial class PagamentoPage : UserControl
 {
-    static readonly CultureInfo Br = new("pt-BR");
-    static string Moeda(decimal v) => v.ToString("C", Br);
+    static readonly CultureInfo Br = Formato.Br;           // mesmo padrão brasileiro do resto do sistema
+    static string Moeda(decimal v) => Formato.Dinheiro(v);
+
+    // fontes das linhas de serviço: criadas uma vez só (evita vazar recursos a cada atualização)
+    static readonly Font FonteNome = new("Segoe UI", 9.5F, FontStyle.Bold);
+    static readonly Font FonteDetalhe = new("Segoe UI", 8.5F);
 
     public record ServicoRealizado(string Nome, string Detalhe, decimal Valor);
 
     enum Forma { Dinheiro, Pix, Cartao }
 
     // ---------- eventos para integrar com o resto do sistema ----------
-    public event Action? VoltarSolicitado;                       // "Voltar para a agenda" / "Cancelar e voltar"
+    public event Action? VoltarSolicitado;                       // "Voltar" / "Cancelar e voltar"
     public event Action<string, decimal>? PagamentoConfirmado;  // (forma, valor) -> gravar no banco
 
     // ---------- estado ----------
     string cliente = "Júlia Reis";
-    string profissional = "Bruna";
+    string profissional = "Patrícia";
     DateTime data = new(2026, 10, 21);
     List<ServicoRealizado> servicos = new()
     {
-        new("Coloração", "Cor, cuidado e renovação", 160m),
-        new("Hidratação", "Tratamento dos fios", 80m),
+        new("Coloração", "Cabelo · 2h", 320m),
+        new("Hidratação", "Cabelo · 1h", 90m),
     };
     Forma forma = Forma.Pix;
     bool pago;
@@ -130,18 +133,18 @@ public partial class PagamentoPage : UserControl
         var nome = new Label
         {
             Text = s.Nome, AutoSize = true, Location = new Point(24, 10), BackColor = Color.Transparent,
-            ForeColor = CoresPagamento.Texto, Font = new Font("Segoe UI", 9.5F, FontStyle.Bold)
+            ForeColor = CoresPagamento.Texto, Font = FonteNome
         };
         var det = new Label
         {
             Text = s.Detalhe, AutoSize = true, Location = new Point(24, 31), BackColor = Color.Transparent,
-            ForeColor = CoresPagamento.Suave, Font = new Font("Segoe UI", 8.5F)
+            ForeColor = CoresPagamento.Suave, Font = FonteDetalhe
         };
         var valor = new Label
         {
             Text = Moeda(s.Valor), AutoSize = false, TextAlign = ContentAlignment.MiddleRight,
             BackColor = Color.Transparent, ForeColor = CoresPagamento.Texto,
-            Font = new Font("Segoe UI", 9.5F, FontStyle.Bold)
+            Font = FonteNome
         };
         l.Controls.AddRange(new Control[] { nome, det, valor });
         l.Resize += (_, _) => valor.SetBounds(l.Width - 184, 0, 160, l.Height);
@@ -159,7 +162,7 @@ public partial class PagamentoPage : UserControl
         else if (recebido < Total)
         {
             lblTroco.Text = $"Faltam {Moeda(Total - recebido)}";
-            lblTroco.ForeColor = Color.FromArgb(191, 95, 86);
+            lblTroco.ForeColor = Cores.Coral;
         }
         else
         {
@@ -205,9 +208,5 @@ public partial class PagamentoPage : UserControl
         return decimal.TryParse(texto, NumberStyles.Number, Br, out valor);
     }
 
-    static string Iniciais(string nome)
-    {
-        var partes = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return string.Concat(partes.Take(2).Select(p => char.ToUpper(p[0])));
-    }
+    static string Iniciais(string nome) => Util.Iniciais(nome);
 }

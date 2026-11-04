@@ -1,4 +1,6 @@
 ﻿using System.Data;
+using System.Text;
+using dashboardforms.Pagamentos;
 
 namespace dashboardforms;
 
@@ -16,9 +18,10 @@ public class DashboardForm : Form
             new[] { "9h", "11h", "13h", "15h", "17h", "19h" }, new float[] { 180, 420, 260, 510, 330, 140 }, 3),
         ["Semana"] = new("R$ 9.620", "▲ 4,8%", "72", "▲ 5", "11", "▼ 2", "R$ 134", "▲ 1,9%",
             new[] { "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb" }, new float[] { 980, 1240, 1410, 1620, 2380, 1990 }, 4),
-        ["Mês"] = new("R$ 38.450", "▲ 4,2%", "286", "▲ 12", "41", "▼ 2,9%", "R$ 134", "▲ 2,3%",
+        ["Mês"] = new("R$ 38.450", "▲ 4,2%", "286", "▲ 12", "41", "▼ 1", "R$ 134", "▲ 2,3%",
             new[] { "Sem 1", "Sem 2", "Sem 3", "Sem 4" }, new float[] { 8900, 9620, 10150, 9780 }, 2),
-        ["Ano"] = new("R$ 412.300", "▲ 9,6%", "3.140", "▲ 8,1%", "468", "▲ 5,4%", "R$ 131", "▲ 1,2%",
+        // Ano: soma de jan a out (nov/dez ainda não aconteceram)
+        ["Ano"] = new("R$ 338.850", "▲ 9,6%", "2.587", "▲ 194", "468", "▲ 24", "R$ 131", "▲ 1,2%",
             new[] { "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez" },
             new float[] { 28000, 26500, 31000, 33200, 35800, 34100, 36500, 37200, 38100, 38450, 0, 0 }, 9),
     };
@@ -29,6 +32,33 @@ public class DashboardForm : Form
     readonly Dictionary<string, Button> botoesPeriodo = new();
     readonly Dictionary<string, Button> botoesMenu = new();
     readonly DataTable tabela = new();
+    readonly Font fonteStatus = new("Segoe UI", 9f, FontStyle.Bold);
+
+    // Meta do mês (depois virá do banco)
+    const decimal FaturamentoMes = 38450m, MetaMes = 49000m;
+
+    // ---------- atendimentos de exemplo (os preços batem com o catálogo de Serviços) ----------
+    class Atendimento
+    {
+        public required string Cliente { get; init; }
+        public required string Profissional { get; init; }
+        public required (string Nome, decimal Valor)[] Servicos { get; init; }
+        public DateTime Data { get; init; } = DateTime.Today;
+        public string? Forma { get; set; }          // null = ainda não pago
+        public bool Pago => Forma != null;
+        public decimal Total => Servicos.Sum(s => s.Valor);
+    }
+
+    readonly List<Atendimento> atendimentos = new()
+    {
+        new() { Cliente = "Camila Souza",   Profissional = "Juliana",  Servicos = new[] { ("Escova", 70m), ("Hidratação", 90m) }, Forma = "Pix" },
+        new() { Cliente = "Fernanda Lima",  Profissional = "Patrícia", Servicos = new[] { ("Coloração", 320m) }, Forma = "Cartão" },
+        new() { Cliente = "Marcos Pereira", Profissional = "Rafael",   Servicos = new[] { ("Corte masculino", 55m) }, Forma = "Dinheiro" },
+        new() { Cliente = "Aline Costa",    Profissional = "Bianca",   Servicos = new[] { ("Manicure", 40m), ("Pedicure", 45m) } },
+        new() { Cliente = "Renata Alves",   Profissional = "Juliana",  Servicos = new[] { ("Corte feminino", 120m) }, Forma = "Cartão" },
+        new() { Cliente = "Beatriz Nunes",  Profissional = "Patrícia", Servicos = new[] { ("Progressiva", 450m) } },
+        new() { Cliente = "Lucas Martins",  Profissional = "Rafael",   Servicos = new[] { ("Barba", 40m) }, Forma = "Pix" },
+    };
 
     // Área onde as páginas são trocadas quando se clica no menu
     readonly Panel areaPaginas = new() { Dock = DockStyle.Fill, BackColor = Cores.Fundo };
@@ -67,10 +97,13 @@ public class DashboardForm : Form
 
         var meta = new Card { Dock = DockStyle.Bottom, Height = 120, Preenchimento = Cores.Escuro, Margin = new Padding(0) };
         var lm = new Label { Text = "Meta do mês", ForeColor = Cores.Rosa, Dock = DockStyle.Top, Height = 22, BackColor = Color.Transparent };
-        var lv = new Label { Text = "78%", ForeColor = Color.White, Font = new Font("Segoe UI", 20f, FontStyle.Bold), Dock = DockStyle.Top, Height = 40, BackColor = Color.Transparent };
+        int pctMeta = (int)Math.Round(FaturamentoMes * 100 / MetaMes);
+        var lv = new Label { Text = $"{pctMeta}%", ForeColor = Color.White, Font = new Font("Segoe UI", 20f, FontStyle.Bold), Dock = DockStyle.Top, Height = 40, BackColor = Color.Transparent };
         var barra = new Panel { Dock = DockStyle.Top, Height = 10, BackColor = Color.FromArgb(70, 30, 38) };
-        barra.Controls.Add(new Panel { Dock = DockStyle.Left, Width = 150, BackColor = Cores.Primaria });
-        var lt = new Label { Text = "R$ 38,4k de R$ 49k", ForeColor = Color.White, Dock = DockStyle.Top, Height = 24, BackColor = Color.Transparent, Padding = new Padding(0, 6, 0, 0) };
+        var preenchida = new Panel { Dock = DockStyle.Left, BackColor = Cores.Primaria };
+        barra.Controls.Add(preenchida);
+        barra.Resize += (_, _) => preenchida.Width = barra.Width * Math.Min(100, pctMeta) / 100;
+        var lt = new Label { Text = $"R$ {(FaturamentoMes / 1000).ToString("0.#", Formato.Br)}k de R$ {(MetaMes / 1000).ToString("0.#", Formato.Br)}k", ForeColor = Color.White, Dock = DockStyle.Top, Height = 24, BackColor = Color.Transparent, Padding = new Padding(0, 6, 0, 0) };
         meta.Controls.Add(lt); meta.Controls.Add(barra); meta.Controls.Add(lv); meta.Controls.Add(lm);
 
         var rodape = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 92, FlowDirection = FlowDirection.TopDown, WrapContents = false };
@@ -129,19 +162,57 @@ public class DashboardForm : Form
             // As páginas são criadas só na primeira vez que são abertas
             pagina = nome switch
             {
+                "Clientes" => new ClientesPage { Dock = DockStyle.Fill },
                 "Serviços" => new ServicosPage { Dock = DockStyle.Fill },
                 _ => PaginaEmBreve(nome)   // páginas que outros membros do grupo ainda vão fazer
             };
             paginas[nome] = pagina;
         }
 
+        Exibir(pagina, nome, nome);
+    }
+
+    // Coloca um controle na área de páginas. "menu" é o item da sidebar que fica destacado.
+    void Exibir(Control pagina, string titulo, string menu)
+    {
+        var anteriores = areaPaginas.Controls.Cast<Control>().Where(c => c != pagina).ToList();
+
         areaPaginas.SuspendLayout();
-        areaPaginas.Controls.Clear();
+        areaPaginas.Controls.Clear();   // só remove da tela; as páginas guardadas em "paginas" continuam vivas
         areaPaginas.Controls.Add(pagina);
         areaPaginas.ResumeLayout();
 
-        Text = $"Sallona - {nome}";
-        MarcarMenu(nome);
+        // Telas temporárias (ex.: Pagamento) não ficam guardadas: libera depois que o clique atual terminar
+        foreach (var c in anteriores)
+            if (!paginas.ContainsValue(c)) BeginInvoke(new Action(c.Dispose));
+
+        Text = $"Sallona - {titulo}";
+        MarcarMenu(menu);
+    }
+
+    // ---------- Pagamento de um atendimento pendente ----------
+    void AbrirPagamento(Atendimento a)
+    {
+        if (a.Pago) return;
+
+        // descrição de cada serviço vem do catálogo (categoria · duração)
+        var catalogo = Repositorios.Servicos.Todos();
+        var itens = a.Servicos.Select(s =>
+        {
+            var c = catalogo.FirstOrDefault(x => string.Equals(x.Nome, s.Nome, StringComparison.CurrentCultureIgnoreCase));
+            string detalhe = c == null ? "" : $"{c.Categoria} · {Formato.Duracao(c.DuracaoMin)}";
+            return new PagamentoPage.ServicoRealizado(s.Nome, detalhe, s.Valor);
+        });
+
+        var pagina = new PagamentoPage { Dock = DockStyle.Fill };
+        pagina.Carregar(a.Cliente, a.Data, a.Profissional, itens);
+        pagina.VoltarSolicitado += () => MostrarPagina("Dashboard");
+        pagina.PagamentoConfirmado += (forma, _) =>
+        {
+            a.Forma = forma;    // TODO: gravar no MySQL
+            PreencherTabela();
+        };
+        Exibir(pagina, "Pagamento", "Dashboard");
     }
 
     static Control PaginaEmBreve(string nome)
@@ -214,17 +285,27 @@ public class DashboardForm : Form
         var lp = new ListaProgresso { Dock = DockStyle.Fill };
         lp.Itens.AddRange(new[]
         {
-            ("Corte feminino", 82, Cores.Primaria), ("Escova", 64, Cores.Coral), ("Coloração", 51, Cores.Vinho),
-            ("Manicure", 47, Cores.Rosa), ("Hidratação", 33, Cores.Primaria),
+            ("Corte feminino", 30, Cores.Primaria), ("Escova", 23, Cores.Coral), ("Coloração", 18, Cores.Vinho),
+            ("Manicure", 17, Cores.Rosa), ("Hidratação", 12, Cores.Primaria),
         });
         cServ.Controls.Add(lp);
-        cServ.Controls.Add(Titulo("Serviços mais realizados"));
+        cServ.Controls.Add(Titulo("Serviços mais realizados (% do mês)"));
         raiz.Controls.Add(cServ, 1, 2);
 
 
         var cTab = NovoCard();
         cTab.Controls.Add(ConstruirGrid());
         cTab.Controls.Add(Titulo("Últimos atendimentos"));
+        cTab.Controls.Add(new Label
+        {
+            Text = "Clique duas vezes em um atendimento pendente para registrar o pagamento.",
+            Dock = DockStyle.Bottom,
+            Height = 22,
+            ForeColor = Cores.Cinza,
+            BackColor = Color.Transparent,
+            Font = new Font("Segoe UI", 8.5f),
+            TextAlign = ContentAlignment.BottomLeft
+        });
         raiz.Controls.Add(cTab, 0, 3);
 
         var cAl = NovoCard();
@@ -276,8 +357,8 @@ public class DashboardForm : Form
         caixa.Controls.Add(busca);
         busca.TextChanged += (_, _) =>
         {
-            var t = busca.Text.Replace("'", "''");
-            tabela.DefaultView.RowFilter = string.IsNullOrWhiteSpace(t) ? "" : $"Cliente LIKE '%{t}%'";
+            var t = busca.Text.Trim();
+            tabela.DefaultView.RowFilter = t.Length == 0 ? "" : $"Cliente LIKE '%{EscaparLike(t)}%'";
         };
 
         p.Controls.Add(titulo);
@@ -315,14 +396,8 @@ public class DashboardForm : Form
     {
         tabela.Columns.Add("Cliente"); tabela.Columns.Add("Serviço"); tabela.Columns.Add("Profissional");
         tabela.Columns.Add("Valor"); tabela.Columns.Add("Pagamento"); tabela.Columns.Add("Status");
-        void L(params string[] v) => tabela.Rows.Add(v);
-        L("Camila Souza", "Escova + Hidratação", "Juliana", "R$ 180,00", "Pix", "Pago");
-        L("Fernanda Lima", "Coloração", "Patrícia", "R$ 320,00", "Cartão", "Pago");
-        L("Marcos Pereira", "Corte masculino", "Rafael", "R$ 55,00", "Dinheiro", "Pago");
-        L("Aline Costa", "Manicure e pedicure", "Bianca", "R$ 90,00", "Pix", "Pendente");
-        L("Renata Alves", "Corte feminino", "Juliana", "R$ 120,00", "Cartão", "Pago");
-        L("Beatriz Nunes", "Progressiva", "Patrícia", "R$ 450,00", "Cartão", "Pendente");
-        L("Lucas Martins", "Barba", "Rafael", "R$ 40,00", "Pix", "Pago");
+        tabela.Columns.Add("Indice", typeof(int));   // posição na lista de atendimentos (coluna escondida)
+        PreencherTabela();
 
         var g = new DataGridView
         {
@@ -350,15 +425,45 @@ public class DashboardForm : Form
         g.DefaultCellStyle.ForeColor = Cores.Texto;
         g.DefaultCellStyle.SelectionBackColor = Cores.Fundo;
         g.DefaultCellStyle.SelectionForeColor = Cores.Escuro;
+        g.DataBindingComplete += (_, _) => { if (g.Columns["Indice"] is { } c) c.Visible = false; };
         g.CellFormatting += (_, e) =>
         {
-            if (e.ColumnIndex == 5 && e.Value is string s)
+            if (g.Columns[e.ColumnIndex].Name == "Status" && e.Value is string s)
             {
                 e.CellStyle.ForeColor = s == "Pago" ? Cores.Verde : Cores.Vinho;
-                e.CellStyle.Font = new Font("Segoe UI", 9f, FontStyle.Bold);
+                e.CellStyle.Font = fonteStatus;   // fonte criada uma vez só (criar aqui vazaria memória)
             }
         };
+        g.CellDoubleClick += (_, e) =>
+        {
+            if (e.RowIndex >= 0 && g.Rows[e.RowIndex].DataBoundItem is DataRowView v)
+                AbrirPagamento(atendimentos[(int)v["Indice"]]);
+        };
         return g;
+    }
+
+    void PreencherTabela()
+    {
+        tabela.Rows.Clear();
+        for (int i = 0; i < atendimentos.Count; i++)
+        {
+            var a = atendimentos[i];
+            tabela.Rows.Add(a.Cliente, string.Join(" + ", a.Servicos.Select(s => s.Nome)), a.Profissional,
+                            Formato.Dinheiro(a.Total), a.Forma ?? "—", a.Pago ? "Pago" : "Pendente", i);
+        }
+    }
+
+    // Escapa os caracteres especiais do LIKE do DataView ( ' [ ] * % )
+    static string EscaparLike(string texto)
+    {
+        var sb = new StringBuilder();
+        foreach (char c in texto)
+        {
+            if (c == '\'') sb.Append("''");
+            else if (c is '[' or ']' or '*' or '%') sb.Append('[').Append(c).Append(']');
+            else sb.Append(c);
+        }
+        return sb.ToString();
     }
 
     void AplicarPeriodo(string p)
@@ -375,7 +480,7 @@ public class DashboardForm : Form
         grafico.Rotulos = d.Rotulos;
         grafico.Valores = d.Valores;
         grafico.Destaque = d.Destaque;
-        grafico.Invalidate();
+        grafico.Animar();   // as barras "crescem" ao trocar de período
 
         foreach (var (nome, b) in botoesPeriodo)
         {
@@ -383,5 +488,16 @@ public class DashboardForm : Form
             b.BackColor = ativo ? Cores.Primaria : Color.White;
             b.ForeColor = ativo ? Color.White : Cores.Texto;
         }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            fonteStatus.Dispose();
+            // páginas que não estão na tela no momento também precisam ser liberadas
+            foreach (var p in paginas.Values) if (p.Parent == null) p.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }

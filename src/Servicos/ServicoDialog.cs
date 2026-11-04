@@ -9,7 +9,7 @@ class ServicoDialog : Form
 
     readonly Func<string, bool> nomeEmUso;
     readonly TextBox txtNome = new() { Width = 360, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Segoe UI", 10.5f) };
-    readonly ComboBox cbCategoria = new() { Width = 360, DropDownStyle = ComboBoxStyle.DropDown, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 10.5f) };
+    readonly ComboBox cbCategoria = new() { Width = 360, DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 10.5f) };
     readonly NumericUpDown numPreco = new() { Width = 170, DecimalPlaces = 2, Maximum = 100000, Increment = 5, ThousandsSeparator = true, Font = new Font("Segoe UI", 10.5f) };
     readonly NumericUpDown numDuracao = new() { Width = 170, Minimum = 5, Maximum = 600, Increment = 5, Value = 30, Font = new Font("Segoe UI", 10.5f) };
     readonly CheckBox chkAtivo = new() { Text = "Serviço ativo (aparece na hora de agendar)", AutoSize = true, Checked = true, ForeColor = Cores.Texto, Margin = new Padding(0, 14, 0, 0) };
@@ -85,7 +85,11 @@ class ServicoDialog : Form
 
         // Preenche com os dados do serviço que está sendo editado
         txtNome.Text = Resultado.Nome;
-        cbCategoria.Text = string.IsNullOrWhiteSpace(Resultado.Categoria) ? Categorias[0] : Resultado.Categoria;
+        // Lista fechada: evita "cabelo" e "Cabelo" virarem duas categorias diferentes.
+        // Se um serviço antigo tiver uma categoria fora da lista, ela é mantida como opção.
+        string cat = string.IsNullOrWhiteSpace(Resultado.Categoria) ? Categorias[0] : Resultado.Categoria.Trim();
+        if (!cbCategoria.Items.Contains(cat)) cbCategoria.Items.Add(cat);
+        cbCategoria.SelectedItem = cat;
         numPreco.Value = Math.Min(numPreco.Maximum, Math.Max(0, Resultado.Preco));
         numDuracao.Value = Math.Min(numDuracao.Maximum, Math.Max(numDuracao.Minimum, Resultado.DuracaoMin));
         chkAtivo.Checked = Resultado.Ativo;
