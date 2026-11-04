@@ -394,8 +394,8 @@ public class ClientesPage : UserControl, IPagina
         avatarFicha.Invalidate();
         lblNome.Text = c?.Nome ?? "Nenhum cliente";
         lblTelefone.Text = c?.Telefone ?? "—";
-        lblEmail.Text = c?.Email is { Length: > 0 } e ? e : "E-mail não informado";
-        var visita = c is null ? "—" : UltimaVisita(c)?.ToString("dd/MM/yyyy") ?? "Ainda não veio";
+        lblEmail.Text = c is null ? "—" : c.Email is { Length: > 0 } e ? e : "E-mail não informado";
+        var visita = c is null ? "—" : UltimaVisita(c)?.ToString("dd/MM/yyyy") ?? "Nenhuma visita ainda";
         historico.Visible = editar.Visible = c is not null;
         lblVisita.Text = visita;
         lblPillVisita.Text = $"Última visita: {visita}";

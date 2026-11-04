@@ -45,7 +45,7 @@ public class DashboardForm : Form
         this.usuario = usuario;
         Font = new Font("Segoe UI", 9.5f);
         BackColor = Cores.Fundo;
-        MinimumSize = new Size(1100, 700);
+        MinimumSize = new Size(1100, 680);
         Size = new Size(1320, 780);
         StartPosition = FormStartPosition.CenterScreen;
         DoubleBuffered = true;
@@ -65,10 +65,11 @@ public class DashboardForm : Form
         var sb = new Panel { Dock = DockStyle.Left, Width = 240, BackColor = Color.White, Padding = new Padding(14, 10, 14, 14) };
 
         var logoPath = Path.Combine(AppContext.BaseDirectory, "logo.jpg");
-        var logo = new PictureBox { Dock = DockStyle.Top, Height = 140, SizeMode = PictureBoxSizeMode.Zoom };
+        var logo = new PictureBox { Dock = DockStyle.Top, Height = 96, SizeMode = PictureBoxSizeMode.Zoom };
         if (File.Exists(logoPath)) logo.Image = Image.FromFile(logoPath);
 
-        var menu = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 8 * 44 + 8, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+        // alturas compactas para caber tudo (inclusive "Sair") em telas de notebook de 768px
+        var menu = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 8 * 40 + 8, FlowDirection = FlowDirection.TopDown, WrapContents = false };
         foreach (var (icone, nome) in new[] { ("📊", "Dashboard"), ("👥", "Clientes"), ("✂", "Serviços"), ("💇", "Profissionais"),
                                               ("💰", "Financeiro"), ("📦", "Estoque"), ("🛍", "Produtos"), ("📖", "Agenda") })
             menu.Controls.Add(NovoBotaoMenu(icone, nome));
@@ -89,7 +90,7 @@ public class DashboardForm : Form
             c.Click += (_, _) => DefinirMeta();
         }
 
-        var rodape = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 92, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+        var rodape = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 84, FlowDirection = FlowDirection.TopDown, WrapContents = false };
         rodape.Controls.Add(NovoBotaoMenu("⚙", "Configurações"));
         rodape.Controls.Add(NovoBotaoMenu("⏻", "Sair"));
 
@@ -105,7 +106,7 @@ public class DashboardForm : Form
         var b = new Button
         {
             Text = $"{icone}   {nome}",
-            Size = new Size(210, 40),
+            Size = new Size(210, 36),
             FlatStyle = FlatStyle.Flat,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(12, 0, 0, 0),
@@ -414,7 +415,7 @@ public class DashboardForm : Form
         };
         grid.CellFormatting += (_, e) =>
         {
-            if (grid.Columns[e.ColumnIndex].Name == "Status" && e.Value is string s)
+            if (e.CellStyle != null && grid.Columns[e.ColumnIndex].Name == "Status" && e.Value is string s)
             {
                 e.CellStyle.ForeColor = s == "Pago" ? Cores.Verde : Cores.Vinho;
                 e.CellStyle.Font = fonteStatus;   // fonte criada uma vez só (criar aqui vazaria memória)

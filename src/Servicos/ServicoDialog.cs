@@ -113,7 +113,7 @@ class ServicoDialog : Form
             nome.Length == 0 ? "Informe o nome do serviço." :
             nomeEmUso(nome) ? "Já existe um serviço com esse nome." :
             categoria.Length == 0 ? "Escolha uma categoria." :
-            numPreco.Value <= 0 ? "Informe um preço maior que zero." :
+            Math.Round(numPreco.Value, 2) <= 0 ? "Informe um preço maior que zero." :
             null;
 
         if (erro != null)
@@ -124,7 +124,8 @@ class ServicoDialog : Form
 
         Resultado.Nome = nome;
         Resultado.Categoria = categoria;
-        Resultado.Preco = numPreco.Value;
+        // o NumericUpDown aceita digitar mais casas do que mostra (ex.: "0,00120"): guarda só 2
+        Resultado.Preco = Math.Round(numPreco.Value, 2);
         Resultado.DuracaoMin = (int)numDuracao.Value;
         Resultado.Ativo = chkAtivo.Checked;
         DialogResult = DialogResult.OK;

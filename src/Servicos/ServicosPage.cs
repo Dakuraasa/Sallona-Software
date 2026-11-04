@@ -200,7 +200,7 @@ class ServicosPage : UserControl, IPagina
 
         grid.CellFormatting += (_, e) =>
         {
-            if (e.RowIndex < 0 || grid.Rows[e.RowIndex].DataBoundItem is not DataRowView v) return;
+            if (e.RowIndex < 0 || e.CellStyle == null || grid.Rows[e.RowIndex].DataBoundItem is not DataRowView v) return;
             bool inativo = (string)v["Status"] == "Inativo";
             if (inativo) e.CellStyle.ForeColor = Cores.Cinza;
 

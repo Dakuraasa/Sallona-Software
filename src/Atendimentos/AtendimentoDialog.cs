@@ -1,4 +1,4 @@
-namespace dashboardforms;
+﻿namespace dashboardforms;
 
 // ===== Registrar um atendimento: cliente + profissional + serviços realizados =====
 // (enquanto a Agenda não estiver pronta, é por aqui que os atendimentos entram no sistema)
@@ -25,7 +25,7 @@ class AtendimentoDialog : Formulario
             Value = DateTime.Now
         });
 
-        var lista = AdicionarCampo("Serviços realizados", new CheckedListBox { Height = 150, CheckOnClick = true, BorderStyle = BorderStyle.FixedSingle });
+        var lista = AdicionarCampo("Serviços realizados", new CheckedListBox { Height = 110, CheckOnClick = true, BorderStyle = BorderStyle.FixedSingle });
         foreach (var s in servicosAtivos)
             lista.Items.Add(new ItemLista(s));
 
@@ -84,6 +84,6 @@ class MetaDialog : Formulario
         {
             Text = "Use 0 para não ter meta.", AutoSize = true, ForeColor = Cores.Cinza, Margin = new Padding(0, 6, 0, 0)
         });
-        AoSalvar = () => Valor = num.Value;
+        AoSalvar = () => Valor = Math.Round(num.Value, 2);
     }
 }
