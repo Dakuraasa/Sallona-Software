@@ -1,11 +1,14 @@
-namespace dashboardforms.Agenda;
+﻿namespace dashboardforms.Agenda;
 
 class AgendaPage : UserControl, IPagina
 {
+    static string Maiuscula(string t) => t.Length == 0 ? t : char.ToUpper(t[0]) + t[1..];
+
     enum Modo { Dia, Semana, Mes, Ano }
 
     Modo modo = Modo.Dia;
     DateTime dataRef = DateTime.Today;
+    string ultimaVista = "";
     int? filtroProfissional;
     string? filtroStatus;
     bool carregando;
@@ -206,7 +209,7 @@ class AgendaPage : UserControl, IPagina
                 if (colunas.Count == 0) colunas.Add(new ColunaGrade("Agenda", "cadastre profissionais", dataRef.Date, null));
                 grade.MostrarProfissional = false;
                 grade.Mostrar(colunas, lista);
-                lblTitulo.Text = br.TextInfo.ToTitleCase(dataRef.ToString("dddd, d 'de' MMMM 'de' yyyy", br));
+                lblTitulo.Text = Maiuscula(dataRef.ToString("dddd, d 'de' MMMM 'de' yyyy", br));
                 visao = grade;
                 break;
             }
@@ -225,7 +228,7 @@ class AgendaPage : UserControl, IPagina
             }
             case Modo.Mes:
                 visaoMes.Mostrar(dataRef, lista);
-                lblTitulo.Text = br.TextInfo.ToTitleCase(dataRef.ToString("MMMM 'de' yyyy", br));
+                lblTitulo.Text = Maiuscula(dataRef.ToString("MMMM 'de' yyyy", br));
                 visao = visaoMes;
                 lista = lista.Where(a => a.Inicio.Month == dataRef.Month && a.Inicio.Year == dataRef.Year).ToList();
                 break;
@@ -248,6 +251,10 @@ class AgendaPage : UserControl, IPagina
             areaVisao.Controls.Clear();
             areaVisao.Controls.Add(visao);
         }
+        string chave = $"{modo}|{lblTitulo.Text}";
+        if (visao == grade && chave != ultimaVista && grade.IsHandleCreated)
+            grade.BeginInvoke(new Action(grade.RolarParaAgora));
+        ultimaVista = chave;
         foreach (var (m, b) in botoesModo)
         {
             bool at = m == modo;

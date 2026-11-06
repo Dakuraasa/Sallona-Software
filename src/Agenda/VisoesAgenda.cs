@@ -1,4 +1,4 @@
-using System.Drawing.Drawing2D;
+﻿using System.Drawing.Drawing2D;
 using System.Globalization;
 
 namespace dashboardforms.Agenda;
@@ -143,7 +143,9 @@ class GradeAgenda : UserControl
 
     public void RolarParaAgora()
     {
-        int alvo = Colunas.Any(c => c.Hoje) ? Math.Max(horaInicio, DateTime.Now.Hour - 1) : horaInicio;
+        var visiveis = Agendamentos.Where(a => Colunas.Any(c => c.Data.Date == a.Inicio.Date)).ToList();
+        int alvo = Colunas.Any(c => c.Hoje) ? Math.Max(horaInicio, DateTime.Now.Hour - 1)
+                 : visiveis.Count > 0 ? Math.Max(horaInicio, visiveis.Min(a => a.Inicio.Hour)) : horaInicio;
         int y = (alvo - horaInicio) * AlturaHora;
         rolagem.AutoScrollPosition = new Point(0, Math.Max(0, y));
     }

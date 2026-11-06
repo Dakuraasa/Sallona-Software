@@ -65,7 +65,7 @@ class ConfiguracoesPage : UserControl, IPagina
         lblResumo.Text =
             $"{Repositorios.Clientes.Todos().Count} clientes  ·  {Repositorios.Servicos.Todos().Count} serviços  ·  " +
             $"{Repositorios.Profissionais.Todos().Count} profissionais  ·  {Repositorios.Produtos.Todos().Count} produtos  ·  " +
-            $"{Repositorios.Atendimentos.Todos().Count} atendimentos";
+            $"{Repositorios.Atendimentos.Todos().Count} atendimentos  ·  {Repositorios.Agendamentos.Todos().Count} agendamentos";
     }
 
     static Card NovoCartao(string titulo, string descricao, int altura, out Panel corpo, Color? fundo = null)
