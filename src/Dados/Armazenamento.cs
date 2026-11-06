@@ -97,6 +97,8 @@ static class Repositorios
     public static ProdutoRepositorio Produtos { get; private set; } = null!;
     public static EstoqueRepositorio Estoque { get; private set; } = null!;
 
+    public static DespesaRepositorio Despesas { get; private set; } = null!;
+
     public static void Abrir(Usuario usuario)
     {
         string pasta = Armazenamento.PastaDaConta(usuario.Id);
@@ -107,6 +109,7 @@ static class Repositorios
         Profissionais = new ProfissionalRepositorio(pasta);
         Produtos = new ProdutoRepositorio(pasta);
         Estoque = new EstoqueRepositorio(pasta);
+        Despesas = new DespesaRepositorio(pasta);
     }
 }
 

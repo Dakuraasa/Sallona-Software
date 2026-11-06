@@ -247,7 +247,7 @@ class ConfiguracoesPage : UserControl, IPagina
 
     // ---------- 5) Backup ----------
     static readonly string[] ArquivosDaConta =
-        { "clientes.json", "servicos.json", "atendimentos.json", "profissionais.json", "produtos.json", "movimentos_estoque.json", "configuracao.json" };
+        { "clientes.json", "servicos.json", "atendimentos.json", "profissionais.json", "produtos.json", "movimentos_estoque.json", "configuracao.json", "despesas.json" };
 
     Control CartaoBackup()
     {

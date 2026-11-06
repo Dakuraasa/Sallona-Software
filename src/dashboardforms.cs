@@ -169,6 +169,7 @@ public class DashboardForm : Form
                 "Profissionais" => new ProfissionaisPage { Dock = DockStyle.Fill },
                 "Produtos" => new ProdutosPage { Dock = DockStyle.Fill },
                 "Estoque" => new EstoquePage { Dock = DockStyle.Fill },
+                "Financeiro" => new FinanceiroPage { Dock = DockStyle.Fill },
                 "Configurações" => NovaPaginaConfiguracoes(),
                 _ => PaginaEmBreve(nome)   // páginas que outros membros do grupo ainda vão fazer
             };
