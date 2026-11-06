@@ -4,23 +4,18 @@ using System.Text.Json;
 
 namespace dashboardforms;
 
-// ===== Configurações =====
-// No topo: a conta conectada e o botão Desconectar (volta para a tela de login).
-// Depois: dados do estabelecimento, senha, preferências, backup e exclusão da conta.
 class ConfiguracoesPage : UserControl, IPagina
 {
-    // largura fixa dos cartões (centralizados): cabe na janela no tamanho mínimo (1100 px)
     const int Largura = 780;
     const int LarguraCampo = 350, Coluna2 = 380;
 
     readonly Usuario usuario;
     readonly UsuarioRepositorio contas = new();
 
-    /// <summary>Pede para o Dashboard voltar para a tela de login.</summary>
     public event Action? Desconectar;
-    /// <summary>Encerra a sessão sem perguntar (depois de restaurar backup ou excluir a conta).</summary>
+
     public event Action? SessaoEncerrada;
-    /// <summary>Avisa que o nome do estabelecimento/e-mail mudou (para atualizar o título da janela).</summary>
+
     public event Action? ContaAlterada;
 
     readonly FlowLayoutPanel coluna;
@@ -47,11 +42,11 @@ class ConfiguracoesPage : UserControl, IPagina
         coluna.Controls.Add(CartaoEstabelecimento());
         coluna.Controls.Add(CartaoSenha());
         coluna.Controls.Add(CartaoPreferencias());
+        coluna.Controls.Add(CartaoExpediente());
         coluna.Controls.Add(CartaoBackup());
         coluna.Controls.Add(CartaoPerigo());
         Controls.Add(coluna);
 
-        // centraliza os cartões quando a janela é larga
         coluna.Resize += (_, _) =>
         {
             int sobra = Math.Max(20, (coluna.ClientSize.Width - Largura) / 2);
@@ -73,9 +68,6 @@ class ConfiguracoesPage : UserControl, IPagina
             $"{Repositorios.Atendimentos.Todos().Count} atendimentos";
     }
 
-    // =====================================================================
-    // Montagem dos cartões
-    // =====================================================================
     static Card NovoCartao(string titulo, string descricao, int altura, out Panel corpo, Color? fundo = null)
     {
         var c = new Card { Width = Largura, Height = altura, Margin = new Padding(0, 0, 0, 14), Padding = new Padding(24, 18, 24, 18), Preenchimento = fundo ?? Color.White };
@@ -87,7 +79,6 @@ class ConfiguracoesPage : UserControl, IPagina
         return c;
     }
 
-    // rótulo + campo, posicionados em grade (coluna 0 ou 1)
     static T Campo<T>(Panel corpo, string rotulo, T campo, int col, int linha, int largura = LarguraCampo) where T : Control
     {
         int x = col * Coluna2, y = linha * 62;
@@ -113,7 +104,6 @@ class ConfiguracoesPage : UserControl, IPagina
         l.ForeColor = ok ? Cores.Verde : Cores.Vinho;
     }
 
-    // ---------- 1) Conta conectada ----------
     Control CartaoConta()
     {
         var c = new Card { Width = Largura, Height = 120, Margin = new Padding(0, 0, 0, 14), Padding = new Padding(24, 20, 24, 20), Preenchimento = Cores.Escuro };
@@ -130,13 +120,12 @@ class ConfiguracoesPage : UserControl, IPagina
         var sair = Ui.Botao("⏻   Desconectar", Cores.Primaria, Color.White, 150);
         sair.Click += (_, _) => Desconectar?.Invoke();
         c.Controls.AddRange(new Control[] { avatar, lblSalao, lblInfoConta, conectado, sair });
-        // o cartão tem largura fixa, então dá para posicionar direto (à direita)
+
         sair.Location = new Point(Largura - 24 - sair.Width, 52);
         conectado.Location = new Point(Largura - 24 - 90, 24);
         return c;
     }
 
-    // ---------- 2) Dados do estabelecimento ----------
     Control CartaoEstabelecimento()
     {
         var c = NovoCartao("Dados do estabelecimento", "Aparecem no sistema e identificam a conta. O e-mail é o usado para entrar.", 330, out var corpo);
@@ -172,7 +161,7 @@ class ConfiguracoesPage : UserControl, IPagina
             try
             {
                 contas.AtualizarDados(usuario.Id, salao.Text, resp.Text, email.Text, tel.Text, end.Text, doc.Text);
-                // atualiza também a conta que está em uso nesta sessão
+
                 var atual = contas.PorId(usuario.Id)!;
                 (usuario.NomeSalao, usuario.Nome, usuario.Email, usuario.Telefone, usuario.Endereco, usuario.Documento) =
                     (atual.NomeSalao, atual.Nome, atual.Email, atual.Telefone, atual.Endereco, atual.Documento);
@@ -188,7 +177,6 @@ class ConfiguracoesPage : UserControl, IPagina
         return c;
     }
 
-    // ---------- 3) Senha ----------
     Control CartaoSenha()
     {
         var c = NovoCartao("Segurança", "Troque a senha de acesso do estabelecimento (todos que usam a conta precisarão da nova).", 260, out var corpo);
@@ -217,7 +205,6 @@ class ConfiguracoesPage : UserControl, IPagina
         return c;
     }
 
-    // ---------- 4) Preferências ----------
     Control CartaoPreferencias()
     {
         var c = NovoCartao("Preferências", "Valores usados pelo Dashboard e sugeridos nos cadastros.", 260, out var corpo);
@@ -245,9 +232,48 @@ class ConfiguracoesPage : UserControl, IPagina
         return c;
     }
 
-    // ---------- 5) Backup ----------
+    Control CartaoExpediente()
+    {
+        var c = NovoCartao("Horário de funcionamento", "A Agenda só oferece horários dentro do expediente (domingo fica fechado).", 270, out var corpo);
+        var cfg = Repositorios.Configuracao.Dados;
+        static DateTimePicker Hora(int min) => new()
+        {
+            Format = DateTimePickerFormat.Custom, CustomFormat = "HH:mm", ShowUpDown = true,
+            Value = DateTime.Today.AddMinutes(min)
+        };
+        var abre = Campo(corpo, "Abre às", Hora(cfg.AberturaMin), 0, 0, 160);
+        var fecha = Campo(corpo, "Fecha às", Hora(cfg.FechamentoMin), 1, 0, 160);
+        var almIni = Campo(corpo, "Almoço começa", Hora(cfg.AlmocoInicioMin), 0, 1, 160);
+        var almFim = Campo(corpo, "Almoço termina", Hora(cfg.AlmocoFimMin), 1, 1, 160);
+        var semAlmoco = Adicionar(corpo, new CheckBox
+        {
+            Text = "Sem pausa para almoço", AutoSize = true, Location = new Point(Coluna2 + 180, 84),
+            Checked = cfg.AlmocoFimMin <= cfg.AlmocoInicioMin, BackColor = Color.Transparent, ForeColor = Cores.Texto
+        });
+        void Habilitar() => almIni.Enabled = almFim.Enabled = !semAlmoco.Checked;
+        semAlmoco.CheckedChanged += (_, _) => Habilitar();
+        Habilitar();
+
+        var salvar = Adicionar(corpo, Ui.Botao("Salvar horário", Cores.Primaria, Color.White, 150));
+        salvar.Location = new Point(0, 134);
+        var status = Status(corpo, 166, 142);
+        salvar.Click += (_, _) =>
+        {
+            static int Min(DateTimePicker d) => d.Value.Hour * 60 + d.Value.Minute;
+            int a = Min(abre), f = Min(fecha), ai = semAlmoco.Checked ? 0 : Min(almIni), af = semAlmoco.Checked ? 0 : Min(almFim);
+            string? erro =
+                a >= f ? "O horário de fechar precisa ser depois do de abrir." :
+                !semAlmoco.Checked && (ai < a || af > f || ai >= af) ? "O almoço precisa ficar dentro do expediente (início antes do fim)." :
+                null;
+            if (erro != null) { Avisar(status, erro, false); return; }
+            if (Armazenamento.Tentar(FindForm(), () => Repositorios.Configuracao.SalvarExpediente(a, f, ai, af)))
+                Avisar(status, "✓ Horário salvo.", true);
+        };
+        return c;
+    }
+
     static readonly string[] ArquivosDaConta =
-        { "clientes.json", "servicos.json", "atendimentos.json", "profissionais.json", "produtos.json", "movimentos_estoque.json", "configuracao.json", "despesas.json" };
+        { "clientes.json", "servicos.json", "atendimentos.json", "profissionais.json", "produtos.json", "movimentos_estoque.json", "configuracao.json", "despesas.json", "agendamentos.json" };
 
     Control CartaoBackup()
     {
@@ -321,7 +347,6 @@ class ConfiguracoesPage : UserControl, IPagina
         using var dlg = new OpenFileDialog { Title = "Escolha o backup do Sallona", Filter = "Backup do Sallona (*.zip)|*.zip" };
         if (dlg.ShowDialog(FindForm()) != DialogResult.OK) return;
 
-        // 1) lê e confere o backup ANTES de mexer em qualquer coisa
         var conteudo = new Dictionary<string, string>();
         try
         {
@@ -329,7 +354,7 @@ class ConfiguracoesPage : UserControl, IPagina
             if (zip.GetEntry("backup-info.json") == null) throw new InvalidDataException("Este arquivo não é um backup do Sallona.");
             foreach (var e in zip.Entries)
             {
-                if (!ArquivosDaConta.Contains(e.FullName)) continue;   // ignora qualquer outro arquivo (e caminhos estranhos)
+                if (!ArquivosDaConta.Contains(e.FullName)) continue;
                 if (e.Length > 50_000_000) throw new InvalidDataException($"{e.FullName} é grande demais.");
                 using var r = new StreamReader(e.Open());
                 string json = r.ReadToEnd();
@@ -350,7 +375,6 @@ class ConfiguracoesPage : UserControl, IPagina
                 "Restaurar backup"))
             return;
 
-        // 2) cópia de segurança automática do que existe hoje
         string dir = Armazenamento.PastaDaConta(usuario.Id);
         string pastaBackups = Path.Combine(Armazenamento.PastaRaiz, "backups");
         try
@@ -358,7 +382,6 @@ class ConfiguracoesPage : UserControl, IPagina
             Directory.CreateDirectory(pastaBackups);
             CriarZip(Path.Combine(pastaBackups, $"conta{usuario.Id}-antes-de-restaurar-{DateTime.Now:yyyyMMdd-HHmmss}.zip"));
 
-            // 3) troca os arquivos (os que não estão no backup são apagados, para não misturar dados)
             foreach (var nome in ArquivosDaConta)
             {
                 var caminho = Path.Combine(dir, nome);
@@ -377,7 +400,6 @@ class ConfiguracoesPage : UserControl, IPagina
         SessaoEncerrada?.Invoke();
     }
 
-    // Confere se o JSON tem o formato certo para aquele arquivo
     static void ValidarJson(string nome, string json)
     {
         object? lido = nome switch
@@ -389,6 +411,8 @@ class ConfiguracoesPage : UserControl, IPagina
             "produtos.json" => JsonSerializer.Deserialize<List<Produto>>(json),
             "movimentos_estoque.json" => JsonSerializer.Deserialize<List<MovimentoEstoque>>(json),
             "configuracao.json" => JsonSerializer.Deserialize<Configuracao>(json),
+            "despesas.json" => JsonSerializer.Deserialize<List<Despesa>>(json),
+            "agendamentos.json" => JsonSerializer.Deserialize<List<Agendamento>>(json),
             _ => null
         };
         if (lido == null) throw new InvalidDataException($"{nome} está vazio ou corrompido.");
@@ -401,7 +425,6 @@ class ConfiguracoesPage : UserControl, IPagina
         return limpo.Length == 0 ? "salao" : limpo;
     }
 
-    // ---------- 6) Excluir conta ----------
     Control CartaoPerigo()
     {
         var c = NovoCartao("Excluir conta do estabelecimento",
@@ -428,7 +451,6 @@ class ConfiguracoesPage : UserControl, IPagina
     }
 }
 
-// ===== Pede a senha para confirmar a exclusão da conta =====
 class ConfirmarSenhaDialog : Formulario
 {
     public string Senha { get; private set; } = "";

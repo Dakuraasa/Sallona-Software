@@ -2,12 +2,6 @@
 
 namespace dashboardforms;
 
-// ===== Onde os dados ficam salvos =====
-// Ainda não usamos banco de dados: cada conta tem a sua própria pasta em
-//   %AppData%\Sallona\contas\<id da conta>\
-// com um arquivo JSON para cada assunto (clientes.json, servicos.json...).
-// TODO: quando o MySQL estiver pronto, os repositórios passam a usar SQL
-// e esta classe deixa de ser necessária — as telas não mudam.
 static class Armazenamento
 {
     public static readonly string PastaRaiz = Path.Combine(
@@ -18,8 +12,6 @@ static class Armazenamento
     public static string PastaDaConta(int idConta) =>
         Path.Combine(PastaRaiz, "contas", idConta.ToString());
 
-    // Lê uma lista de um arquivo JSON. Se o arquivo não existir, devolve lista vazia.
-    // Se estiver corrompido, guarda uma cópia .bak e começa do zero (não perde o original).
     public static List<T> Carregar<T>(string arquivo)
     {
         try
@@ -48,9 +40,6 @@ static class Armazenamento
         return null;
     }
 
-    // Grava primeiro num arquivo temporário e só depois troca pelo oficial:
-    // se o programa cair no meio da gravação, o arquivo antigo continua inteiro.
-    // Pode lançar IOException/UnauthorizedAccessException — quem chama trata e avisa o usuário.
     public static void Salvar<T>(string arquivo, T dados)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(arquivo)!);
@@ -59,7 +48,6 @@ static class Armazenamento
         File.Move(temp, arquivo, overwrite: true);
     }
 
-    // Grava um texto pronto (usado pela restauração de backup), também de forma segura
     public static void SalvarTexto(string arquivo, string conteudo)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(arquivo)!);
@@ -68,7 +56,6 @@ static class Armazenamento
         File.Move(temp, arquivo, overwrite: true);
     }
 
-    // Executa uma gravação; se der erro, avisa em vez de fechar o programa.
     public static bool Tentar(IWin32Window? dono, Action acao)
     {
         try
@@ -85,8 +72,6 @@ static class Armazenamento
     }
 }
 
-// ===== Repositórios da conta que fez login =====
-// As telas sempre usam Repositorios.X; o Program chama Abrir(...) logo depois do login.
 static class Repositorios
 {
     public static ServicoRepositorio Servicos { get; private set; } = null!;
@@ -98,6 +83,7 @@ static class Repositorios
     public static EstoqueRepositorio Estoque { get; private set; } = null!;
 
     public static DespesaRepositorio Despesas { get; private set; } = null!;
+    public static AgendamentoRepositorio Agendamentos { get; private set; } = null!;
 
     public static void Abrir(Usuario usuario)
     {
@@ -110,16 +96,20 @@ static class Repositorios
         Produtos = new ProdutoRepositorio(pasta);
         Estoque = new EstoqueRepositorio(pasta);
         Despesas = new DespesaRepositorio(pasta);
+        Agendamentos = new AgendamentoRepositorio(pasta);
     }
 }
 
-// ===== Preferências da conta (editadas em Configurações) =====
 class Configuracao
 {
     public decimal MetaMensal { get; set; }
-    public string PeriodoPadrao { get; set; } = "Mês";      // período que o Dashboard abre
-    public decimal ComissaoPadrao { get; set; }             // % sugerida ao cadastrar profissional
-    public int EstoqueMinimoPadrao { get; set; } = 2;       // sugerido ao cadastrar produto
+    public string PeriodoPadrao { get; set; } = "Mês";
+    public decimal ComissaoPadrao { get; set; }
+    public int EstoqueMinimoPadrao { get; set; } = 2;
+    public int AberturaMin { get; set; } = 8 * 60;
+    public int FechamentoMin { get; set; } = 18 * 60;
+    public int AlmocoInicioMin { get; set; } = 12 * 60;
+    public int AlmocoFimMin { get; set; } = 13 * 60;
 }
 
 class ConfiguracaoRepositorio
@@ -134,6 +124,15 @@ class ConfiguracaoRepositorio
     }
 
     public decimal MetaMensal => dados.MetaMensal;
+    public Configuracao Dados => dados;
+
+    public void SalvarExpediente(int abertura, int fechamento, int almocoInicio, int almocoFim)
+    {
+        var antes = (dados.AberturaMin, dados.FechamentoMin, dados.AlmocoInicioMin, dados.AlmocoFimMin);
+        (dados.AberturaMin, dados.FechamentoMin, dados.AlmocoInicioMin, dados.AlmocoFimMin) = (abertura, fechamento, almocoInicio, almocoFim);
+        try { Armazenamento.Salvar(arquivo, dados); }
+        catch { (dados.AberturaMin, dados.FechamentoMin, dados.AlmocoInicioMin, dados.AlmocoFimMin) = antes; throw; }
+    }
     public string PeriodoPadrao => dados.PeriodoPadrao;
     public decimal ComissaoPadrao => dados.ComissaoPadrao;
     public int EstoqueMinimoPadrao => dados.EstoqueMinimoPadrao;

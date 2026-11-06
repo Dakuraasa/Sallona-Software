@@ -2,9 +2,6 @@ using System.Data;
 
 namespace dashboardforms;
 
-// ===== Peças de tela repetidas nas páginas (cabeçalho, cartões, KPIs, tabela) =====
-// Assim Profissionais, Produtos, Estoque e Configurações ficam com o mesmo visual
-// do Dashboard e de Serviços sem copiar e colar o mesmo código em cada página.
 static class Ui
 {
     public static readonly Font Negrito = new("Segoe UI", 9f, FontStyle.Bold);
@@ -27,7 +24,6 @@ static class Ui
         return raiz;
     }
 
-    // Título da página à esquerda e controles (filtros, botões) à direita
     public static Panel Cabecalho(string titulo, params Control[] direita)
     {
         var p = new Panel { Dock = DockStyle.Fill, BackColor = Cores.Fundo };
@@ -60,7 +56,6 @@ static class Ui
         Font = Pequena, TextAlign = ContentAlignment.BottomLeft
     };
 
-    // Linha com 4 KPIs; devolve os rótulos de valor e de subtítulo para a página preencher
     public static TableLayoutPanel Kpis(string[] titulos, out Label[] valores, out Label[] subs)
     {
         var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = titulos.Length, RowCount = 1, BackColor = Cores.Fundo, Margin = new Padding(0) };
@@ -88,7 +83,6 @@ static class Ui
 
     public static BotaoAnimado BotaoPrincipal(string texto, int largura = 150) => Botao(texto, Cores.Escuro, Color.White, largura);
 
-    // Caixa de busca arredondada (igual à do Dashboard)
     public static Card Busca(string dica, Action<string> aoDigitar, int largura = 210)
     {
         var caixa = new Card { Raio = 17, Size = new Size(largura, 34), Padding = new Padding(0), Margin = new Padding(0, 0, 8, 0) };
@@ -98,7 +92,6 @@ static class Ui
         return caixa;
     }
 
-    // Tabela no padrão visual Sallona, ligada a um DataTable
     public static DataGridView Tabela(DataTable dados)
     {
         var g = new DataGridView
@@ -145,7 +138,6 @@ static class Ui
         return g;
     }
 
-    // Pinta a coluna "Situação"/"Status" (verde = ok, vinho = alerta, cinza = inativo)
     public static void ColorirSituacao(DataGridView g, string coluna, Func<string, Color?> cor)
     {
         g.CellFormatting += (_, e) =>
@@ -156,7 +148,6 @@ static class Ui
         };
     }
 
-    // Seleciona de novo a linha com esse Id (depois de recarregar a tabela)
     public static void Selecionar(DataGridView g, int? id)
     {
         if (g.Rows.Count == 0) return;

@@ -1,7 +1,5 @@
 ﻿namespace dashboardforms.Login;
 
-// ===== Cadastrar o estabelecimento (link "Cadastre-se" da tela de login) =====
-// Uma conta por salão: o dono e os funcionários entram com ela.
 class FrmCadastro : Formulario
 {
     public Usuario? Criado { get; private set; }

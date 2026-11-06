@@ -2,13 +2,11 @@
 
 namespace dashboardforms;
 
-// ===== Páginas do menu que sabem se atualizar quando voltam a aparecer =====
 interface IPagina
 {
     void Recarregar();
 }
 
-// ===== Paleta Sallona =====
 static class Cores
 {
     public static readonly Color Escuro = ColorTranslator.FromHtml("#260108");
@@ -21,7 +19,6 @@ static class Cores
     public static readonly Color Cinza = ColorTranslator.FromHtml("#8E7A7D");
     public static readonly Color Verde = ColorTranslator.FromHtml("#2E9E5B");
 
-    // tons claros usados em bordas, destaques e avatares
     public static readonly Color Borda = Color.FromArgb(232, 226, 223);
     public static readonly Color RosaClaro = Color.FromArgb(246, 232, 237);
     public static readonly Color AvatarFundo = Color.FromArgb(243, 220, 228);
@@ -29,7 +26,6 @@ static class Cores
 
 static class Util
 {
-    // "Camila Souza" -> "CS"
     public static string Iniciais(string nome)
     {
         var partes = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -49,7 +45,6 @@ static class Util
     }
 }
 
-// ===== Painel com cantos arredondados (cards) =====
 class Card : Panel
 {
     public int Raio { get; set; } = 18;
@@ -78,7 +73,6 @@ class Card : Panel
     }
 }
 
-// ===== Botão com animação de hover e clique =====
 class BotaoAnimado : Button
 {
     Color corNormal = Color.White;
@@ -145,13 +139,12 @@ class BotaoAnimado : Button
     }
 }
 
-// ===== Gráfico de barras (com animação de crescimento) =====
 class GraficoBarras : Control
 {
     public string[] Rotulos = Array.Empty<string>();
     public float[] Valores = Array.Empty<float>();
     public int Destaque = -1;
-    public string Vazio = "Nenhum valor neste período";   // texto quando tudo é zero
+    public string Vazio = "Nenhum valor neste período";
     int hover = -1;
 
     float progresso = 1f;
@@ -206,7 +199,6 @@ class GraficoBarras : Control
         using var pincelTxt = new SolidBrush(Cores.Cinza);
         using var linha = new Pen(Color.FromArgb(235, 225, 223));
 
-        // Sem nenhum valor: mostra só o aviso (antes dividia por zero ao calcular a altura das barras)
         if (max <= 0)
         {
             g.DrawLine(linha, a.X, a.Bottom, a.Right, a.Bottom);
@@ -265,11 +257,10 @@ class GraficoBarras : Control
     }
 }
 
-// ===== Lista com barras de progresso =====
 class ListaProgresso : Control
 {
     public List<(string Nome, int Pct, Color Cor)> Itens = new();
-    public string Vazio = "Nada para mostrar ainda";   // texto quando a lista está vazia
+    public string Vazio = "Nada para mostrar ainda";
 
     public ListaProgresso()
     {
@@ -314,7 +305,6 @@ class ListaProgresso : Control
     }
 }
 
-// ===== Lista simples (título de seção / item + valor à direita) =====
 class ListaLinhas : Control
 {
     public List<(string Texto, string? Direita, Color Cor)> Itens = new();
@@ -347,8 +337,6 @@ class ListaLinhas : Control
     }
 }
 
-// ===== Controles compartilhados (usados em Clientes e Pagamento) =====
-
 class Caixa : Panel
 {
     public int Raio { get; set; } = 14;
@@ -375,7 +363,6 @@ class Caixa : Panel
     }
 }
 
-// círculo com as iniciais do cliente
 class AvatarIniciais : Control
 {
     public string Iniciais { get; set; } = "";

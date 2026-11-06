@@ -2,28 +2,21 @@
 
 namespace dashboardforms;
 
-// ===== Conta do ESTABELECIMENTO =====
-// O login é por salão (não por pessoa): dono(a) e funcionários entram com a mesma conta.
 public class Usuario
 {
     public int Id { get; set; }
-    public string Nome { get; set; } = "";        // responsável pelo estabelecimento
-    public string NomeSalao { get; set; } = "";   // nome do estabelecimento
+    public string Nome { get; set; } = "";
+    public string NomeSalao { get; set; } = "";
     public string Email { get; set; } = "";
     public string Telefone { get; set; } = "";
     public string Endereco { get; set; } = "";
-    public string Documento { get; set; } = "";   // CNPJ ou CPF (opcional)
+    public string Documento { get; set; } = "";
     public DateTime CriadoEm { get; set; } = DateTime.Now;
 
-    // A senha NUNCA é guardada: guardamos só um "hash" dela (PBKDF2 + sal aleatório).
     public string SenhaHash { get; set; } = "";
     public string SenhaSal { get; set; } = "";
 }
 
-// ===== Contas cadastradas neste computador =====
-// Ficam em %AppData%\Sallona\usuarios.json. Cada conta tem a sua pasta de dados
-// (clientes, serviços, atendimentos), então uma conta não vê os dados da outra.
-// TODO: quando o banco MySQL estiver pronto, as contas passam a ficar lá.
 class UsuarioRepositorio
 {
     const int Iteracoes = 100_000;
@@ -41,7 +34,6 @@ class UsuarioRepositorio
     Usuario? PorEmail(string email) =>
         usuarios.FirstOrDefault(u => string.Equals(u.Email, email.Trim(), StringComparison.OrdinalIgnoreCase));
 
-    // Devolve a conta se e-mail e senha conferem; senão, null.
     public Usuario? Autenticar(string email, string senha)
     {
         var u = PorEmail(email);
@@ -63,7 +55,6 @@ class UsuarioRepositorio
         u.SenhaHash = Convert.ToBase64String(Rfc2898DeriveBytes.Pbkdf2(senha, sal, Iteracoes, HashAlgorithmName.SHA256, 32));
     }
 
-    // Atualiza os dados do estabelecimento (não mexe na senha)
     public void AtualizarDados(int id, string nomeSalao, string responsavel, string email, string telefone, string endereco, string documento)
     {
         var u = PorId(id) ?? throw new InvalidOperationException("Conta não encontrada.");
@@ -85,7 +76,6 @@ class UsuarioRepositorio
         catch { (u.SenhaSal, u.SenhaHash) = (sal, hash); throw; }
     }
 
-    // Exclui a conta e TODOS os dados dela (pede a senha para confirmar)
     public void Excluir(int id, string senha)
     {
         var u = PorId(id) ?? throw new InvalidOperationException("Conta não encontrada.");
@@ -105,7 +95,6 @@ class UsuarioRepositorio
 
         var u = new Usuario
         {
-            // nunca reaproveita o Id de uma conta excluída (a pasta de dados usa o Id)
             Id = Math.Max(usuarios.Count == 0 ? 0 : usuarios.Max(x => x.Id), MaiorPastaDeConta()) + 1,
             Nome = nome.Trim(),
             NomeSalao = nomeSalao.Trim(),
@@ -125,7 +114,6 @@ class UsuarioRepositorio
         return Directory.GetDirectories(pasta).Select(d => int.TryParse(Path.GetFileName(d), out int n) ? n : 0).DefaultIfEmpty(0).Max();
     }
 
-    // Validação simples de e-mail (tem algo@algo.algo, sem espaços)
     public static bool EmailValido(string email)
     {
         int arroba = email.IndexOf('@');

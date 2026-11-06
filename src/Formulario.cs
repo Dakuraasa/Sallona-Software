@@ -1,8 +1,5 @@
 ﻿namespace dashboardforms;
 
-// ===== Base das janelas de cadastro (cliente, atendimento, conta, meta) =====
-// Monta o visual padrão Sallona: título, campos um embaixo do outro, mensagem de erro
-// e os botões Salvar / Cancelar. Cada janela só adiciona os campos e diz como validar.
 class Formulario : Form
 {
     protected const int LarguraCampo = 360;
@@ -15,10 +12,8 @@ class Formulario : Form
     };
     readonly BotaoAnimado btnSalvar;
 
-    /// <summary>Validação: devolve a mensagem de erro, ou null se estiver tudo certo.</summary>
     protected Func<string?> Validar = () => null;
 
-    /// <summary>O que fazer quando a validação passa (ex.: gravar). Se der exceção, a janela não fecha.</summary>
     protected Action AoSalvar = () => { };
 
     public Formulario(string titulo, string textoSalvar = "Salvar")
@@ -68,7 +63,6 @@ class Formulario : Form
         AcceptButton = btnSalvar;
         CancelButton = cancelar;
 
-        // os botões entram por último (no Load), para ficarem depois de todos os campos
         Load += (_, _) =>
         {
             corpo.Controls.Add(lblErro);
@@ -81,13 +75,12 @@ class Formulario : Form
             botoes.Controls.Add(cancelar);
             corpo.Controls.Add(botoes);
 
-            // altura da janela = soma dos campos (sem precisar calcular na mão em cada tela)
             int altura = corpo.Controls.Cast<Control>().Sum(c => c.Height + c.Margin.Vertical);
             var tela = Screen.FromPoint(Cursor.Position).WorkingArea;
-            // se não couber na tela (notebook 768px), a janela fica menor e os campos rolam
+
             ClientSize = new Size(LarguraCampo + 32 + 52 + 8 + 18, Math.Min(altura + 32 + 38 + 8, tela.Height - 60));
         };
-        // garante que a janela inteira (com os botões) fique dentro da tela
+
         Shown += (_, _) =>
         {
             var tela = Screen.FromControl(this).WorkingArea;
@@ -96,7 +89,6 @@ class Formulario : Form
         };
     }
 
-    // ---------- helpers para montar os campos ----------
     protected void AdicionarRotulo(string texto) => corpo.Controls.Add(new Label
     {
         Text = texto,

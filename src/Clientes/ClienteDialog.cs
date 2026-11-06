@@ -1,6 +1,5 @@
 namespace dashboardforms;
 
-// ===== Janela para cadastrar ou editar um cliente =====
 class ClienteDialog : Formulario
 {
     public Cliente Resultado { get; }

@@ -1,7 +1,5 @@
 ﻿namespace dashboardforms;
 
-// ===== Registrar um atendimento: cliente + profissional + serviços realizados =====
-// (enquanto a Agenda não estiver pronta, é por aqui que os atendimentos entram no sistema)
 class AtendimentoDialog : Formulario
 {
     public Atendimento Resultado { get; } = new();
@@ -37,7 +35,7 @@ class AtendimentoDialog : Formulario
         AdicionarControle(lblTotal);
 
         IEnumerable<Servico> Marcados() => lista.CheckedItems.Cast<ItemLista>().Select(i => i.Servico);
-        // ItemCheck acontece ANTES da marcação mudar, então recalcula logo depois
+
         lista.ItemCheck += (_, _) => BeginInvoke(new Action(() => lblTotal.Text = "Total: " + Formato.Dinheiro(Marcados().Sum(s => s.Preco))));
 
         Validar = () =>
@@ -61,7 +59,6 @@ class AtendimentoDialog : Formulario
         };
     }
 
-    // item da lista: mostra "Nome — R$ 0,00 (duração)"
     sealed record ItemLista(Servico Servico)
     {
         public override string ToString() =>
@@ -69,7 +66,6 @@ class AtendimentoDialog : Formulario
     }
 }
 
-// ===== Definir a meta de faturamento do mês =====
 class MetaDialog : Formulario
 {
     public decimal Valor { get; private set; }

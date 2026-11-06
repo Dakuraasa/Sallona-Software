@@ -1,6 +1,5 @@
 ﻿namespace dashboardforms;
 
-// ===== Janela para adicionar ou editar um serviço =====
 class ServicoDialog : Form
 {
     public static readonly string[] Categorias = { "Cabelo", "Unhas", "Estética", "Maquiagem", "Barba", "Outros" };
@@ -15,7 +14,6 @@ class ServicoDialog : Form
     readonly CheckBox chkAtivo = new() { Text = "Serviço ativo (aparece na hora de agendar)", AutoSize = true, Checked = true, ForeColor = Cores.Texto, Margin = new Padding(0, 14, 0, 0) };
     readonly Label lblErro = new() { Width = 360, Height = 38, ForeColor = Cores.Vinho, Font = new Font("Segoe UI", 9f, FontStyle.Bold), Margin = new Padding(0, 8, 0, 0) };
 
-    // nomeEmUso: função que diz se já existe outro serviço com esse nome
     public ServicoDialog(Servico? existente, Func<string, bool> nomeEmUso)
     {
         this.nomeEmUso = nomeEmUso;
@@ -83,10 +81,8 @@ class ServicoDialog : Form
         AcceptButton = salvar;
         CancelButton = cancelar;
 
-        // Preenche com os dados do serviço que está sendo editado
         txtNome.Text = Resultado.Nome;
-        // Lista fechada: evita "cabelo" e "Cabelo" virarem duas categorias diferentes.
-        // Se um serviço antigo tiver uma categoria fora da lista, ela é mantida como opção.
+
         string cat = string.IsNullOrWhiteSpace(Resultado.Categoria) ? Categorias[0] : Resultado.Categoria.Trim();
         if (!cbCategoria.Items.Contains(cat)) cbCategoria.Items.Add(cat);
         cbCategoria.SelectedItem = cat;
@@ -124,7 +120,7 @@ class ServicoDialog : Form
 
         Resultado.Nome = nome;
         Resultado.Categoria = categoria;
-        // o NumericUpDown aceita digitar mais casas do que mostra (ex.: "0,00120"): guarda só 2
+
         Resultado.Preco = Math.Round(numPreco.Value, 2);
         Resultado.DuracaoMin = (int)numDuracao.Value;
         Resultado.Ativo = chkAtivo.Checked;

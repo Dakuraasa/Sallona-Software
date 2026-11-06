@@ -2,7 +2,6 @@
 
 namespace dashboardforms;
 
-// ===== Modelo: um serviço do catálogo do salão =====
 public class Servico
 {
     public int Id { get; set; }
@@ -15,7 +14,6 @@ public class Servico
     public Servico Copia() => (Servico)MemberwiseClone();
 }
 
-// ===== Formatação no padrão brasileiro =====
 static class Formato
 {
     public static readonly CultureInfo Br = new("pt-BR");
@@ -28,11 +26,6 @@ static class Formato
         : $"{min / 60}h{min % 60:00}";
 }
 
-// ===== Repositório de serviços =====
-// Os serviços ficam salvos em servicos.json, na pasta da conta que fez login
-// (veja Armazenamento.cs). A lista começa vazia: quem cadastra os serviços é o usuário.
-// TODO: quando o banco MySQL estiver pronto, trocar Carregar/Salvar por consultas SQL,
-// mantendo os mesmos métodos públicos — assim a tela não precisa mudar.
 class ServicoRepositorio
 {
     readonly string arquivo;
@@ -60,7 +53,7 @@ class ServicoRepositorio
         s.Id = servicos.Count == 0 ? 1 : servicos.Max(x => x.Id) + 1;
         servicos.Add(s.Copia());
         try { Salvar(); }
-        catch { servicos.RemoveAt(servicos.Count - 1); throw; }   // desfaz se não conseguiu gravar
+        catch { servicos.RemoveAt(servicos.Count - 1); throw; }
     }
 
     public void Atualizar(Servico s)
@@ -73,8 +66,6 @@ class ServicoRepositorio
         catch { servicos[i] = antigo; throw; }
     }
 
-    // Desativar em vez de apagar: o serviço some da hora de agendar,
-    // mas continua no histórico de atendimentos e nos relatórios.
     public void DefinirAtivo(int id, bool ativo)
     {
         var s = servicos.FirstOrDefault(x => x.Id == id);
@@ -85,14 +76,12 @@ class ServicoRepositorio
         catch { s.Ativo = anterior; throw; }
     }
 
-    // Um serviço já usado em algum atendimento não pode ser excluído (só desativado).
     public bool PossuiAtendimentos(int id)
     {
         var s = servicos.FirstOrDefault(x => x.Id == id);
-        return s != null && Repositorios.Atendimentos.UsaServico(s.Nome);
+        return s != null && (Repositorios.Atendimentos.UsaServico(s.Nome) || Repositorios.Agendamentos.UsaServico(s.Nome));
     }
 
-    // Excluir de verdade só é permitido para serviços que nunca foram usados.
     public void Excluir(int id)
     {
         if (PossuiAtendimentos(id))

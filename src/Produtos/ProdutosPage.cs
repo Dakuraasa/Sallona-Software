@@ -2,8 +2,6 @@ using System.Data;
 
 namespace dashboardforms;
 
-// ===== Página de Produtos: cadastro, preço, custo e margem =====
-// (a quantidade em estoque é controlada na página Estoque)
 class ProdutosPage : UserControl, IPagina
 {
     static ProdutoRepositorio repo => Repositorios.Produtos;
@@ -159,7 +157,7 @@ class ProdutosPage : UserControl, IPagina
             int inicial = dlg.Resultado.Quantidade;
             dlg.Resultado.Quantidade = 0;
             repo.Adicionar(dlg.Resultado);
-            // a quantidade inicial entra como movimentação, para aparecer no histórico
+
             if (inicial > 0)
                 Repositorios.Estoque.Movimentar(dlg.Resultado.Id, TipoMovimento.Entrada, inicial, EstoqueRepositorio.MotivoInicial);
         });
@@ -191,7 +189,6 @@ class ProdutosPage : UserControl, IPagina
     }
 }
 
-// ===== Janela para cadastrar ou editar um produto =====
 class ProdutoDialog : Formulario
 {
     public Produto Resultado { get; }

@@ -20,7 +20,8 @@ como projeto final do curso Técnico em Informática.
 | Estoque | Entrada, saída e ajuste de contagem, alerta de estoque baixo e histórico de movimentações |
 | Configurações | Conta conectada + **Desconectar**, dados do estabelecimento, troca de senha, preferências, backup/restauração e exclusão da conta |
 | Pagamento | Aberta pelo Dashboard: clique duas vezes num atendimento **Pendente** |
-| Financeiro, Agenda | Em breve |
+| Financeiro | Receitas, despesas, comissões e lucro do mês |
+| Agenda | Visões de dia (por profissional, com as horas), semana, mês e ano; novo agendamento com horários livres; solicitações para confirmar ou recusar; concluir gera o atendimento |
 
 ## Dados
 
@@ -37,6 +38,14 @@ Os dados ficam em arquivos JSON no computador:
 
 Em **Configurações → Backup e dados** dá para salvar um backup (.zip) e restaurá-lo.
 Para começar do zero, é só apagar a pasta `%AppData%\Sallona`.
+
+## Banco de dados (MySQL)
+
+O script `database/sallona.sql` cria o banco completo no MySQL 8: estabelecimentos (login),
+configurações, clientes, serviços, profissionais, agendamentos, atendimentos, produtos,
+movimentações de estoque e despesas, com chaves estrangeiras, validações, triggers
+(saldo do estoque e conflito de horário na agenda) e views prontas para o Dashboard,
+Financeiro, Estoque e Agenda. Para criar: abra no MySQL Workbench e execute tudo.
 
 ## Como rodar
 

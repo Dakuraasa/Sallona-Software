@@ -4,12 +4,8 @@ using System.Runtime.InteropServices;
 
 namespace dashboardforms.Login
 {
-    // ===== Tela de login: é a primeira coisa que aparece ao abrir o programa =====
-    // Se o login der certo, ela fecha com DialogResult.OK e o Program abre o Dashboard
-    // com a conta que entrou (propriedade Usuario).
     public class FrmLogin : Form
     {
-        // cores da paleta Sallona (controles.cs), para ficar igual ao resto do sistema
         Color corFundo = Cores.Fundo;
         Color corRosa = Cores.Primaria;
         Color corRosaEscuro = ColorTranslator.FromHtml("#983E58");
@@ -22,7 +18,6 @@ namespace dashboardforms.Login
 
         readonly UsuarioRepositorio contas = new();
 
-        /// <summary>Conta que fez login (preenchida quando o login dá certo).</summary>
         public Usuario? Usuario { get; private set; }
 
         Panel pnlEsquerdo = null!;
@@ -37,7 +32,6 @@ namespace dashboardforms.Login
         CheckBox chkLembrar = null!;
         LinkLabel lnkEsqueci = null!;
         LinkLabel lnkCadastro = null!;
-
 
         string arquivoEmail = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -113,15 +107,12 @@ namespace dashboardforms.Login
             pnlEsquerdo.Paint += DesenharArcos;
         }
 
-        // O logo.jpg é copiado para a pasta do programa (veja o .csproj)
         static string BuscarLogo()
         {
             string caminho = Path.Combine(AppContext.BaseDirectory, "logo.jpg");
             return File.Exists(caminho) ? caminho : "";
         }
 
-        // Deixa o fundo branco do logo transparente.
-        // Usa LockBits (acesso direto aos bytes): GetPixel/SetPixel em 360 mil pixels deixava a abertura lenta.
         static Bitmap RemoverFundoBranco(Bitmap original)
         {
             double escala = Math.Min(1.0, 600.0 / Math.Max(original.Width, original.Height));
@@ -142,7 +133,7 @@ namespace dashboardforms.Login
                 int total = Math.Abs(dados.Stride) * altura;
                 var bytes = new byte[total];
                 Marshal.Copy(dados.Scan0, bytes, 0, total);
-                for (int i = 0; i + 3 < total; i += 4)          // ordem dos bytes: B, G, R, A
+                for (int i = 0; i + 3 < total; i += 4)
                 {
                     int menor = Math.Min(bytes[i], Math.Min(bytes[i + 1], bytes[i + 2]));
                     if (menor >= 245) bytes[i + 3] = 0;
@@ -188,7 +179,6 @@ namespace dashboardforms.Login
             lblSubtitulo = CriarLabel(pnlDireito, "Acesse sua conta para continuar.", x, 108, largura, 24,
                 new Font("Segoe UI", 10F), corCinza, ContentAlignment.TopLeft);
 
-            // O login é do ESTABELECIMENTO (dono e funcionários usam a mesma conta do salão)
             var aviso = new PainelArredondado
             {
                 Left = x, Top = 150, Width = largura, Height = 44, Raio = 10,
@@ -339,13 +329,12 @@ namespace dashboardforms.Login
             lblErro.Text = "";
             SalvarEmail(email);
             Usuario = usuario;
-            DialogResult = DialogResult.OK;   // o Program abre o Dashboard
+            DialogResult = DialogResult.OK;
             Close();
         }
 
         void lnkEsqueci_Click(object? sender, EventArgs e)
         {
-            // TODO: recuperação de senha por e-mail precisa de um servidor (fica para quando houver banco/servidor)
             MessageBox.Show(
                 "A recuperação de senha por e-mail ainda não está disponível nesta versão.\n" +
                 "Quem estiver conectado pode trocar a senha em Configurações.",
@@ -463,5 +452,3 @@ namespace dashboardforms.Login
         }
     }
 }
-
-    

@@ -9,8 +9,6 @@ namespace dashboardforms.Login
 {
     public static class FormaArredondada
     {
-        // Usa o mesmo desenho dos outros controles (Formas.Caminho, em controles.cs),
-        // que também funciona quando o controle é menor que o raio.
         public static GraphicsPath Criar(Rectangle r, int raio) => Formas.Caminho(r, raio);
     }
 }

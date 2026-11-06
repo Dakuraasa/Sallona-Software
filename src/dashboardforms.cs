@@ -5,14 +5,10 @@ using dashboardforms.Pagamentos;
 
 namespace dashboardforms;
 
-// ===== Janela principal: menu lateral + área onde as páginas aparecem =====
-// Abre depois do login. Todos os números do Dashboard são CALCULADOS a partir do que
-// a conta logada cadastrou (clientes, serviços, atendimentos) — nada é inventado.
 public class DashboardForm : Form
 {
     readonly Usuario usuario;
 
-    /// <summary>true quando a pessoa clicou em "Sair" (o Program volta para a tela de login).</summary>
     public bool SaiuDaConta { get; private set; }
 
     static readonly string[] Periodos = { "Dia", "Semana", "Mês", "Ano" };
@@ -31,13 +27,11 @@ public class DashboardForm : Form
     readonly Label gridVazio = new();
     readonly Font fonteStatus = new("Segoe UI", 9f, FontStyle.Bold);
 
-    // cartão "Meta do mês" (sidebar)
     readonly Label metaPct = new(), metaTexto = new();
     readonly Panel metaPreenchida = new() { Dock = DockStyle.Left, BackColor = Cores.Primaria };
     readonly Panel metaBarra = new() { Dock = DockStyle.Top, Height = 10, BackColor = Color.FromArgb(70, 30, 38) };
     int metaPorcento;
 
-    // Área onde as páginas são trocadas quando se clica no menu
     readonly Panel areaPaginas = new() { Dock = DockStyle.Fill, BackColor = Cores.Fundo };
     readonly Dictionary<string, Control> paginas = new();
 
@@ -59,9 +53,6 @@ public class DashboardForm : Form
         MostrarPagina("Dashboard");
     }
 
-    // =====================================================================
-    // Sidebar
-    // =====================================================================
     Control ConstruirSidebar()
     {
         var sb = new Panel { Dock = DockStyle.Left, Width = 240, BackColor = Color.White, Padding = new Padding(14, 10, 14, 14) };
@@ -70,13 +61,11 @@ public class DashboardForm : Form
         var logo = new PictureBox { Dock = DockStyle.Top, Height = 96, SizeMode = PictureBoxSizeMode.Zoom };
         if (File.Exists(logoPath)) logo.Image = Image.FromFile(logoPath);
 
-        // alturas compactas para caber tudo (inclusive "Sair") em telas de notebook de 768px
         var menu = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 8 * 40 + 8, FlowDirection = FlowDirection.TopDown, WrapContents = false };
         foreach (var (icone, nome) in new[] { ("📊", "Dashboard"), ("👥", "Clientes"), ("✂", "Serviços"), ("💇", "Profissionais"),
                                               ("💰", "Financeiro"), ("📦", "Estoque"), ("🛍", "Produtos"), ("📖", "Agenda") })
             menu.Controls.Add(NovoBotaoMenu(icone, nome));
 
-        // Meta do mês: quem define é o usuário (clicando no cartão)
         var meta = new Card { Dock = DockStyle.Bottom, Height = 120, Preenchimento = Cores.Escuro, Margin = new Padding(0), Cursor = Cursors.Hand };
         var lm = new Label { Text = "Meta do mês  ✎", ForeColor = Cores.Rosa, Dock = DockStyle.Top, Height = 22, BackColor = Color.Transparent };
         metaPct.ForeColor = Color.White; metaPct.Font = new Font("Segoe UI", 20f, FontStyle.Bold);
@@ -132,7 +121,7 @@ public class DashboardForm : Form
     {
         var r = MessageBox.Show(this, "Deseja sair da sua conta?", "Sair", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         if (r != DialogResult.Yes) return;
-        SaiuDaConta = true;   // o Program mostra a tela de login de novo
+        SaiuDaConta = true;
         Close();
     }
 
@@ -155,14 +144,10 @@ public class DashboardForm : Form
             AtualizarMeta(Repositorios.Atendimentos.Todos());
     }
 
-    // =====================================================================
-    // Navegação entre páginas
-    // =====================================================================
     void MostrarPagina(string nome)
     {
         if (!paginas.TryGetValue(nome, out var pagina))
         {
-            // As páginas são criadas só na primeira vez que são abertas
             pagina = nome switch
             {
                 "Clientes" => new ClientesPage { Dock = DockStyle.Fill },
@@ -171,43 +156,49 @@ public class DashboardForm : Form
                 "Produtos" => new ProdutosPage { Dock = DockStyle.Fill },
                 "Estoque" => new EstoquePage { Dock = DockStyle.Fill },
                 "Financeiro" => new FinanceiroPage { Dock = DockStyle.Fill },
-                "Agenda" => new AgendaPage { Dock = DockStyle.Fill },
+                "Agenda" => NovaPaginaAgenda(),
                 "Configurações" => NovaPaginaConfiguracoes(),
-                _ => PaginaEmBreve(nome)   // páginas que outros membros do grupo ainda vão fazer
+                _ => PaginaEmBreve(nome)
             };
             paginas[nome] = pagina;
         }
         else if (pagina is IPagina p)
         {
-            p.Recarregar();   // os dados podem ter mudado em outra página
+            p.Recarregar();
         }
 
         if (nome == "Dashboard") AtualizarDashboard();
         Exibir(pagina, nome, nome);
     }
 
+    Control NovaPaginaAgenda()
+    {
+        var p = new AgendaPage { Dock = DockStyle.Fill };
+        p.PagamentoSolicitado += AbrirPagamento;
+        p.NavegarPara += MostrarPagina;
+        return p;
+    }
+
     Control NovaPaginaConfiguracoes()
     {
         var p = new ConfiguracoesPage(usuario) { Dock = DockStyle.Fill };
-        p.Desconectar += Sair;                                       // botão "Desconectar" (pergunta antes)
-        p.SessaoEncerrada += () => { SaiuDaConta = true; Close(); }; // backup restaurado / conta excluída
+        p.Desconectar += Sair;
+        p.SessaoEncerrada += () => { SaiuDaConta = true; Close(); };
         p.ContaAlterada += () => Text = $"Sallona - Configurações  ·  {NomeExibido()}";
         return p;
     }
 
     string NomeExibido() => string.IsNullOrWhiteSpace(usuario.NomeSalao) ? usuario.Nome : usuario.NomeSalao;
 
-    // Coloca um controle na área de páginas. "menu" é o item da sidebar que fica destacado.
     void Exibir(Control pagina, string titulo, string menu)
     {
         var anteriores = areaPaginas.Controls.Cast<Control>().Where(c => c != pagina).ToList();
 
         areaPaginas.SuspendLayout();
-        areaPaginas.Controls.Clear();   // só remove da tela; as páginas guardadas em "paginas" continuam vivas
+        areaPaginas.Controls.Clear();
         areaPaginas.Controls.Add(pagina);
         areaPaginas.ResumeLayout();
 
-        // Telas temporárias (ex.: Pagamento) não ficam guardadas: libera depois que o clique atual terminar
         foreach (var c in anteriores)
             if (!paginas.ContainsValue(c)) BeginInvoke(new Action(c.Dispose));
 
@@ -249,9 +240,6 @@ public class DashboardForm : Form
         return fundo;
     }
 
-    // =====================================================================
-    // Conteúdo do Dashboard
-    // =====================================================================
     Control ConstruirConteudo()
     {
         var raiz = new TableLayoutPanel
@@ -397,7 +385,7 @@ public class DashboardForm : Form
         tabela.Columns.Add("Data", typeof(DateTime));
         tabela.Columns.Add("Cliente"); tabela.Columns.Add("Serviço"); tabela.Columns.Add("Profissional");
         tabela.Columns.Add("Valor", typeof(decimal)); tabela.Columns.Add("Pagamento"); tabela.Columns.Add("Status");
-        tabela.Columns.Add("Id", typeof(int));   // id do atendimento (coluna escondida)
+        tabela.Columns.Add("Id", typeof(int));
 
         grid.Dock = DockStyle.Fill;
         grid.DataSource = tabela.DefaultView;
@@ -436,7 +424,7 @@ public class DashboardForm : Form
             if (e.CellStyle != null && grid.Columns[e.ColumnIndex].Name == "Status" && e.Value is string s)
             {
                 e.CellStyle.ForeColor = s == "Pago" ? Cores.Verde : Cores.Vinho;
-                e.CellStyle.Font = fonteStatus;   // fonte criada uma vez só (criar aqui vazaria memória)
+                e.CellStyle.Font = fonteStatus;
             }
         };
         grid.CellDoubleClick += (_, e) =>
@@ -444,7 +432,6 @@ public class DashboardForm : Form
             if (e.RowIndex >= 0 && AtendimentoDaLinha(e.RowIndex) is { } a) AbrirPagamento(a);
         };
 
-        // botão direito: registrar pagamento / excluir
         var menu = new ContextMenuStrip();
         var itemPagar = menu.Items.Add("Registrar pagamento", null, (_, _) => { if (Selecionado() is { } a) AbrirPagamento(a); });
         menu.Items.Add("Excluir atendimento", null, (_, _) => ExcluirSelecionado());
@@ -476,16 +463,12 @@ public class DashboardForm : Form
 
     Atendimento? Selecionado() => grid.CurrentRow == null ? null : AtendimentoDaLinha(grid.CurrentRow.Index);
 
-    // =====================================================================
-    // Ações
-    // =====================================================================
     void NovoAtendimento()
     {
         var clientes = Repositorios.Clientes.Todos();
         var servicos = Repositorios.Servicos.Todos().Where(s => s.Ativo).ToList();
         var profissionais = Repositorios.Profissionais.Ativos();
 
-        // o que falta cadastrar antes de registrar um atendimento
         var (falta, oque) = clientes.Count == 0 ? ("Clientes", "um cliente")
                           : servicos.Count == 0 ? ("Serviços", "um serviço ativo")
                           : profissionais.Count == 0 ? ("Profissionais", "um profissional ativo")
@@ -520,12 +503,10 @@ public class DashboardForm : Form
             AtualizarDashboard();
     }
 
-    // ---------- Pagamento de um atendimento pendente ----------
     void AbrirPagamento(Atendimento a)
     {
         if (a.Pago) return;
 
-        // descrição de cada serviço vem do catálogo (categoria · duração)
         var catalogo = Repositorios.Servicos.Todos();
         var itens = a.Itens.Select(i =>
         {
@@ -541,9 +522,6 @@ public class DashboardForm : Form
         Exibir(pagina, "Pagamento", "Dashboard");
     }
 
-    // =====================================================================
-    // Cálculo dos números (tudo a partir dos dados da conta)
-    // =====================================================================
     record Periodo(DateTime Inicio, DateTime Fim, DateTime InicioAnterior, string[] Rotulos, Func<DateTime, int> Fatia, int FatiaAtual, string Nome);
 
     static Periodo CalcularPeriodo(string nome, DateTime agora)
@@ -553,7 +531,6 @@ public class DashboardForm : Form
         {
             case "Dia":
             {
-                // fatias de 2 em 2 horas, das 8h às 20h (antes das 8h conta na primeira, depois das 20h na última)
                 int Fatia(DateTime d) => Math.Clamp((d.Hour - 8) / 2, 0, 6);
                 return new(hoje, hoje.AddDays(1), hoje.AddDays(-1),
                     new[] { "8h", "10h", "12h", "14h", "16h", "18h", "20h" }, Fatia, Fatia(agora), "hoje");
@@ -572,7 +549,7 @@ public class DashboardForm : Form
                     new[] { "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez" },
                     d => d.Month - 1, hoje.Month - 1, "neste ano");
             }
-            default:   // Mês
+            default:
             {
                 var ini = new DateTime(hoje.Year, hoje.Month, 1);
                 int semanas = (DateTime.DaysInMonth(hoje.Year, hoje.Month) + 6) / 7;
@@ -592,7 +569,6 @@ public class DashboardForm : Form
         var atuais = atendimentos.Where(a => Dentro(a.Data, per.Inicio, per.Fim)).ToList();
         var anteriores = atendimentos.Where(a => Dentro(a.Data, per.InicioAnterior, per.Inicio)).ToList();
 
-        // ---- KPIs ----
         decimal fat = atuais.Where(a => a.Pago).Sum(a => a.Total);
         decimal fatAnt = anteriores.Where(a => a.Pago).Sum(a => a.Total);
         int qtd = atuais.Count, qtdAnt = anteriores.Count;
@@ -607,7 +583,6 @@ public class DashboardForm : Form
         MostrarKpi(2, novos.ToString("N0", Formato.Br), VariacaoAbsoluta(novos, novosAnt));
         MostrarKpi(3, Formato.Dinheiro(Math.Round(ticket, 2)), VariacaoPercentual(ticket, ticketAnt));
 
-        // ---- Gráfico de faturamento por fatia do período ----
         var valores = new float[per.Rotulos.Length];
         foreach (var a in atuais.Where(a => a.Pago))
         {
@@ -617,10 +592,9 @@ public class DashboardForm : Form
         grafico.Rotulos = per.Rotulos;
         grafico.Valores = valores;
         grafico.Destaque = per.FatiaAtual;
-        grafico.Animar();   // as barras "crescem" ao trocar de período
+        grafico.Animar();
         tituloGrafico.Text = $"Faturamento {per.Nome}";
 
-        // ---- Serviços mais realizados no mês ----
         var mes = CalcularPeriodo("Mês", DateTime.Now);
         var itensMes = atendimentos.Where(a => Dentro(a.Data, mes.Inicio, mes.Fim)).SelectMany(a => a.Itens).ToList();
         Color[] paleta = { Cores.Primaria, Cores.Coral, Cores.Vinho, Cores.Rosa };
@@ -630,12 +604,19 @@ public class DashboardForm : Form
             maisRealizados.Itens.Add(($"{g.Key} ({g.Count()})", (int)Math.Round(g.Count() * 100.0 / itensMes.Count), paleta[i % paleta.Length]));
         maisRealizados.Invalidate();
 
-        // ---- Alertas e destaques ----
         destaques.Itens.Clear();
         var pendentes = atendimentos.Where(a => !a.Pago).OrderBy(a => a.Data).ToList();
         destaques.Itens.Add(($"Pagamentos pendentes ({pendentes.Count})", null, Color.Empty));
         if (pendentes.Count == 0) destaques.Itens.Add(("Nenhum pagamento pendente", "✓", Cores.Verde));
         foreach (var a in pendentes.Take(3)) destaques.Itens.Add((a.ClienteNome, Formato.Dinheiro(a.Total), Cores.Vinho));
+
+        var hoje = Repositorios.Agendamentos.DoDia(DateTime.Today).Where(x => x.OcupaHorario && x.Status != StatusAgendamento.Concluido).ToList();
+        if (hoje.Count > 0)
+        {
+            destaques.Itens.Add(($"Agenda de hoje ({hoje.Count})", null, Color.Empty));
+            foreach (var x in hoje.Where(x => x.Fim >= DateTime.Now).Take(3))
+                destaques.Itens.Add(($"{x.Inicio:HH:mm}  {x.ClienteNome}", x.Status, StatusAgendamento.Cor(x.Status)));
+        }
 
         var baixos = Repositorios.Produtos.Todos().Where(p => p.EstoqueBaixo).OrderBy(p => p.Quantidade).ToList();
         if (baixos.Count > 0)
@@ -677,7 +658,6 @@ public class DashboardForm : Form
                             : (i == 0 ? Color.FromArgb(120, 220, 160) : Cores.Verde);
     }
 
-    // dinheiro: variação em %
     static (string, bool) VariacaoPercentual(decimal atual, decimal anterior)
     {
         if (anterior == 0) return ("sem dados do período anterior", false);
@@ -685,7 +665,6 @@ public class DashboardForm : Form
         return ($"{(pct < 0 ? "▼" : "▲")} {Math.Abs(pct).ToString("0.#", Formato.Br)}% vs. anterior", pct < 0);
     }
 
-    // contagens: variação em números
     static (string, bool) VariacaoAbsoluta(int atual, int anterior)
     {
         if (atual == 0 && anterior == 0) return ("sem dados do período anterior", false);
@@ -733,7 +712,6 @@ public class DashboardForm : Form
         grid.Visible = !vazio;
     }
 
-    // Escapa os caracteres especiais do LIKE do DataView ( ' [ ] * % )
     static string EscaparLike(string texto)
     {
         var sb = new StringBuilder();
@@ -751,7 +729,7 @@ public class DashboardForm : Form
         if (disposing)
         {
             fonteStatus.Dispose();
-            // páginas que não estão na tela no momento também precisam ser liberadas
+
             foreach (var p in paginas.Values) if (p.Parent == null) p.Dispose();
         }
         base.Dispose(disposing);

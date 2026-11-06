@@ -1,17 +1,16 @@
 ﻿namespace dashboardforms;
 
-// ===== Modelo: um atendimento (um cliente, um ou mais serviços) =====
 public class Atendimento
 {
     public int Id { get; set; }
     public int ClienteId { get; set; }
-    public string ClienteNome { get; set; } = "";     // guardado para o histórico não mudar se o cadastro mudar
-    public int ProfissionalId { get; set; }            // 0 = atendimento antigo (só com o nome)
+    public string ClienteNome { get; set; } = "";
+    public int ProfissionalId { get; set; }
     public string Profissional { get; set; } = "";
     public DateTime Data { get; set; } = DateTime.Now;
     public List<ItemAtendimento> Itens { get; set; } = new();
 
-    public string? FormaPagamento { get; set; }        // null = ainda não pago
+    public string? FormaPagamento { get; set; }
     public DateTime? PagoEm { get; set; }
 
     public bool Pago => FormaPagamento != null;
@@ -26,13 +25,8 @@ public class Atendimento
     }
 }
 
-// Serviço realizado e o preço cobrado NAQUELE dia
-// (se o preço do catálogo mudar depois, o histórico continua certo).
 public record ItemAtendimento(string Servico, decimal Valor);
 
-// ===== Repositório de atendimentos =====
-// Ficam em atendimentos.json, na pasta da conta que fez login — começa vazio.
-// TODO: quando a Agenda e o MySQL estiverem prontos, os atendimentos virão de lá.
 class AtendimentoRepositorio
 {
     readonly string arquivo;
@@ -57,7 +51,6 @@ class AtendimentoRepositorio
     public bool UsaServico(string nome) =>
         atendimentos.Any(a => a.Itens.Any(i => string.Equals(i.Servico, nome, StringComparison.CurrentCultureIgnoreCase)));
 
-    // Data da última visita (atendimento pago) de cada cliente
     public Dictionary<int, DateTime> UltimasVisitas() =>
         atendimentos.Where(a => a.Pago)
                     .GroupBy(a => a.ClienteId)

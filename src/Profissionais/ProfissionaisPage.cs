@@ -2,7 +2,6 @@ using System.Data;
 
 namespace dashboardforms;
 
-// ===== Página de Profissionais: equipe, produção do mês e comissão a pagar =====
 class ProfissionaisPage : UserControl, IPagina
 {
     static ProfissionalRepositorio repo => Repositorios.Profissionais;
@@ -81,7 +80,6 @@ class ProfissionaisPage : UserControl, IPagina
         return c;
     }
 
-    // ---------- dados ----------
     public void Recarregar()
     {
         int? manter = Ui.IdSelecionado(grid);
@@ -101,7 +99,6 @@ class ProfissionaisPage : UserControl, IPagina
         Ui.Selecionar(grid, manter);
         atualizando = false;
 
-        // KPIs (sempre de toda a equipe, não só do filtro)
         var ativos = todos.Where(p => p.Ativo).ToList();
         var producoes = todos.Select(p => Producao(p, atendMes)).ToList();
         kpiValor[0].Text = ativos.Count.ToString(); kpiSub[0].Text = $"de {todos.Count} cadastrados";
@@ -113,7 +110,6 @@ class ProfissionaisPage : UserControl, IPagina
 
     static DateTime InicioMes() => new(DateTime.Today.Year, DateTime.Today.Month, 1);
 
-    // Produção no mês: atendimentos, faturado (pagos) e comissão
     static (int qtd, decimal fat, decimal com) Producao(Profissional p, List<Atendimento> atendMes)
     {
         var meus = atendMes.Where(a => a.ProfissionalId == p.Id ||
@@ -156,7 +152,6 @@ class ProfissionaisPage : UserControl, IPagina
         linhas.Invalidate();
     }
 
-    // ---------- ações ----------
     void Novo()
     {
         using var dlg = new ProfissionalDialog(null);
@@ -188,7 +183,6 @@ class ProfissionaisPage : UserControl, IPagina
     }
 }
 
-// ===== Janela para cadastrar ou editar um profissional =====
 class ProfissionalDialog : Formulario
 {
     static readonly string[] Funcoes = { "Cabeleireiro(a)", "Manicure / Pedicure", "Esteticista", "Maquiador(a)", "Barbeiro", "Designer de sobrancelha", "Recepcionista", "Auxiliar" };

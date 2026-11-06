@@ -4,7 +4,6 @@ namespace dashboardforms;
 
 public class ClientesPage : UserControl, IPagina
 {
-    // ---------- paleta: tudo vem de Cores (controles.cs) para ficar igual às outras telas ----------
     static readonly Color Primaria = Cores.Primaria;
     static readonly Color Texto = Cores.Texto;
     static readonly Color Suave = Cores.Cinza;
@@ -14,22 +13,19 @@ public class ClientesPage : UserControl, IPagina
 
     const int AlturaLinha = 72;
 
-    // Fontes das linhas da lista: criadas uma vez só e reaproveitadas
-    // (criar uma Font nova para cada linha a cada atualização vaza recursos do Windows).
     static readonly Font FonteColuna = new("Segoe UI", 9.5F);
     static readonly Font FonteColunaNegrito = new("Segoe UI", 9.5F, FontStyle.Bold);
     static readonly Font FonteSeta = new("Segoe UI", 16F);
     int porPaginaAtual;
-   
+
     int PorPagina => Math.Max(1, linhas.Height / AlturaLinha);
 
-    // Os clientes vêm do repositório compartilhado (Cliente.cs), como na tela de Serviços.
     List<Cliente> todos = new();
-    Dictionary<int, DateTime> visitas = new();   // última visita (atendimento pago) de cada cliente
+    Dictionary<int, DateTime> visitas = new();
 
     Cliente? selecionado;
     bool ordemAZ = true;
-    int filtroVisita;      
+    int filtroVisita;
     int pagina = 1;
     int totalPaginas = 1;
 
@@ -50,20 +46,19 @@ public class ClientesPage : UserControl, IPagina
         DoubleBuffered = true;
 
         var conteudo = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 0, 0, 8) };
-        conteudo.Controls.Add(ConstruirLista());   
-        conteudo.Controls.Add(ConstruirFicha());   
+        conteudo.Controls.Add(ConstruirLista());
+        conteudo.Controls.Add(ConstruirFicha());
 
         Controls.Add(conteudo);
         Controls.Add(ConstruirRodape());
         Controls.Add(ConstruirBarra());
-        Controls.Add(ConstruirCabecalho());     
-       
+        Controls.Add(ConstruirCabecalho());
+
         linhas.Resize += (_, _) => { if (PorPagina != porPaginaAtual) Aplicar(); };
 
         Recarregar();
     }
 
-    // Lê de novo os clientes e as visitas (chamado ao abrir a página e depois de cada alteração)
     public void Recarregar()
     {
         todos = Repositorios.Clientes.Todos();
@@ -73,7 +68,6 @@ public class ClientesPage : UserControl, IPagina
 
     DateTime? UltimaVisita(Cliente c) => visitas.TryGetValue(c.Id, out var d) ? d : null;
 
-    // ================= ações =================
     void NovoCliente()
     {
         using var dlg = new ClienteDialog(null);
@@ -117,7 +111,6 @@ public class ClientesPage : UserControl, IPagina
         MessageBox.Show(FindForm(), texto, $"Histórico de {selecionado.Nome}", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
-    // ================= cabeçalho =================
     Control ConstruirCabecalho()
     {
         var p = new Panel { Dock = DockStyle.Top, Height = 108 };
@@ -150,7 +143,6 @@ public class ClientesPage : UserControl, IPagina
         return p;
     }
 
-    // ================= busca + filtros + ordenação =================
     Control ConstruirBarra()
     {
         var p = new Panel { Dock = DockStyle.Top, Height = 72, Padding = new Padding(0, 0, 0, 26) };
@@ -188,12 +180,10 @@ public class ClientesPage : UserControl, IPagina
         return p;
     }
 
-    // ================= lista =================
     Control ConstruirLista()
     {
         var card = new Caixa { Dock = DockStyle.Fill, Padding = new Padding(1) };
 
-        // título + badge com a contagem
         var titulo = new FlowLayoutPanel
         {
             Dock = DockStyle.Top,
@@ -211,13 +201,11 @@ public class ClientesPage : UserControl, IPagina
         titulo.Controls.Add(tit);
         titulo.Controls.Add(pill);
 
-        // cabeçalho das colunas
         var cab = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = Color.FromArgb(247, 243, 241) };
         cab.Controls.Add(Rotulo("NOME", 7.5f, FontStyle.Bold, Suave, 24, 14));
         cab.Controls.Add(Rotulo("TELEFONE", 7.5f, FontStyle.Bold, Suave, 238, 14));
         cab.Controls.Add(Rotulo("ÚLTIMA VISITA", 7.5f, FontStyle.Bold, Suave, 422, 14));
 
-        // rodapé: "Mostrando..." + paginação
         var rodape = new Panel { Dock = DockStyle.Bottom, Height = 56, BackColor = Color.Transparent };
         Estilo(lblMostrando, 8.5f, FontStyle.Regular, Suave, 24, 20);
 
@@ -307,7 +295,6 @@ public class ClientesPage : UserControl, IPagina
             BackColor = Color.Transparent
         });
 
-        
         void Clicar(object? s, EventArgs e) => BeginInvoke(new Action(() => { selecionado = c; Aplicar(); }));
         l.Click += Clicar;
         foreach (Control k in l.Controls) k.Click += Clicar;
@@ -325,7 +312,6 @@ public class ClientesPage : UserControl, IPagina
         Font = negrito ? FonteColunaNegrito : FonteColuna
     };
 
-    // ================= ficha do cliente =================
     Control ConstruirFicha()
     {
         var lado = new Panel { Dock = DockStyle.Right, Width = 354, Padding = new Padding(24, 0, 0, 0) };
@@ -401,7 +387,6 @@ public class ClientesPage : UserControl, IPagina
         lblPillVisita.Text = $"Última visita: {visita}";
     }
 
-    // ================= rodapé da página =================
     Control ConstruirRodape()
     {
         var p = new Panel { Dock = DockStyle.Bottom, Height = 32 };
@@ -410,7 +395,6 @@ public class ClientesPage : UserControl, IPagina
         return p;
     }
 
-    // ================= filtro + ordenação + paginação =================
     void Aplicar()
     {
         var limite = DateTime.Today.AddDays(-30);
@@ -432,10 +416,8 @@ public class ClientesPage : UserControl, IPagina
         pagina = Math.Clamp(pagina, 1, totalPaginas);
         var visiveis = lista.Skip((pagina - 1) * porPagina).Take(porPagina).ToList();
 
-        // mantém o cliente selecionado (pelo Id) ou escolhe o primeiro da página
         selecionado = lista.FirstOrDefault(c => c.Id == selecionado?.Id) ?? visiveis.FirstOrDefault();
 
-  
         linhas.SuspendLayout();
         foreach (var antigo in linhas.Controls.Cast<Control>().ToList()) antigo.Dispose();
         for (int i = visiveis.Count - 1; i >= 0; i--) linhas.Controls.Add(Linha(visiveis[i]));
@@ -453,7 +435,6 @@ public class ClientesPage : UserControl, IPagina
         PreencherFicha();
     }
 
-    // ================= utilitários =================
     static string Iniciais(string nome) => Util.Iniciais(nome);
 
     static void Estilo(Label l, float tam, FontStyle estilo, Color cor, int x, int y, string fonte = "Segoe UI")
@@ -471,7 +452,6 @@ public class ClientesPage : UserControl, IPagina
         Estilo(l, tam, estilo, cor, x, y, fonte);
         return l;
     }
-
 
     static Caixa BotaoContorno(string texto, Action<Control> aoClicar)
     {

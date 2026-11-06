@@ -2,9 +2,6 @@
 
 namespace dashboardforms;
 
-// ===== Página de Serviços: catálogo com preço, duração e categoria =====
-// TODO (melhoria futura): quando houver login, só o gerente poderá editar preço,
-// desativar ou excluir; funcionários apenas visualizam.
 class ServicosPage : UserControl, IPagina
 {
     static ServicoRepositorio repo => Repositorios.Servicos;
@@ -16,7 +13,6 @@ class ServicosPage : UserControl, IPagina
     readonly TextBox busca = new() { BorderStyle = BorderStyle.None, PlaceholderText = "Buscar serviço...", Font = new Font("Segoe UI", 10f), Location = new Point(14, 9), Width = 190 };
     readonly Font fonteNegrito = new("Segoe UI", 9f, FontStyle.Bold);
 
-    // painel de detalhes
     readonly Label lblNome = new() { Dock = DockStyle.Top, Height = 34, ForeColor = Cores.Escuro, BackColor = Color.Transparent, Font = new Font("Segoe UI", 14f, FontStyle.Bold), AutoEllipsis = true };
     readonly Label lblCategoria = new() { Dock = DockStyle.Top, Height = 24, ForeColor = Cores.Primaria, BackColor = Color.Transparent, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold) };
     readonly ListaLinhas linhas = new() { Dock = DockStyle.Top, Height = 74 };
@@ -77,7 +73,6 @@ class ServicosPage : UserControl, IPagina
         AplicarFiltro("Todos");
     }
 
-    // ---------- Cabeçalho: título, busca, filtros e botão de novo serviço ----------
     Control ConstruirCabecalho()
     {
         var p = new Panel { Dock = DockStyle.Fill, BackColor = Cores.Fundo };
@@ -150,7 +145,6 @@ class ServicosPage : UserControl, IPagina
         Margin = new Padding(0, 0, 6, 0)
     };
 
-    // ---------- Tabela ----------
     DataGridView ConstruirGrid()
     {
         tabela.Columns.Add("Id", typeof(int));
@@ -221,7 +215,6 @@ class ServicosPage : UserControl, IPagina
         return grid;
     }
 
-    // ---------- Detalhes do serviço selecionado ----------
     Control ConstruirDetalhes()
     {
         var c = NovoCard();
@@ -232,7 +225,6 @@ class ServicosPage : UserControl, IPagina
         botoesAcao.Controls.Add(btnAtivar);
         botoesAcao.Controls.Add(btnExcluir);
 
-        // Dock.Top empilha de baixo para cima: o último adicionado fica no topo
         c.Controls.Add(lblDica);
         c.Controls.Add(botoesAcao);
         c.Controls.Add(linhas);
@@ -276,14 +268,13 @@ class ServicosPage : UserControl, IPagina
         linhas.Invalidate();
     }
 
-    // ---------- Ações ----------
     void NovoServico()
     {
         using var dlg = new ServicoDialog(null, nome => repo.NomeEmUso(nome, 0));
         if (dlg.ShowDialog(FindForm()) != DialogResult.OK) return;
         if (!Tentar(() => repo.Adicionar(dlg.Resultado))) return;
         busca.Text = "";
-        // se o filtro atual esconderia o serviço novo, mostra todos
+
         if ((filtro == "Ativos") != dlg.Resultado.Ativo && filtro != "Todos") filtro = "Todos";
         AplicarFiltro(filtro, dlg.Resultado.Id);
     }
@@ -325,8 +316,6 @@ class ServicosPage : UserControl, IPagina
 
     bool Tentar(Action acao) => Armazenamento.Tentar(FindForm(), acao);
 
-    // ---------- Atualização da tela ----------
-    // Chamado pelo menu sempre que a página volta a aparecer
     public void Recarregar() => Atualizar();
 
     void AplicarFiltro(string nome, int? selecionar = null)
@@ -360,7 +349,6 @@ class ServicosPage : UserControl, IPagina
             tabela.Rows.Add(s.Id, s.Nome, s.Categoria, s.Preco, s.DuracaoMin, s.Ativo ? "Ativo" : "Inativo");
         if (grid.Rows.Count > 0)
         {
-            // volta a selecionar o serviço que estava aberto (ou o primeiro da lista)
             var alvo = grid.Rows.Cast<DataGridViewRow>()
                            .FirstOrDefault(r => r.DataBoundItem is DataRowView v && (int)v["Id"] == manter)
                        ?? grid.Rows[0];
@@ -374,7 +362,6 @@ class ServicosPage : UserControl, IPagina
         AtualizarResumo(todos);
     }
 
-    // Números calculados a partir dos serviços cadastrados (não são fictícios)
     void AtualizarResumo(List<Servico> todos)
     {
         var ativos = todos.Where(s => s.Ativo).ToList();

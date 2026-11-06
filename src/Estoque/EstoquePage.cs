@@ -2,7 +2,6 @@ using System.Data;
 
 namespace dashboardforms;
 
-// ===== Página de Estoque: quanto tem de cada produto, entradas, saídas e histórico =====
 class EstoquePage : UserControl, IPagina
 {
     readonly DataTable tabProdutos = new(), tabMovs = new();
@@ -91,7 +90,6 @@ class EstoquePage : UserControl, IPagina
         avisoVazio.Visible = tabProdutos.Rows.Count == 0;
         gridProdutos.Visible = !avisoVazio.Visible;
 
-        // KPIs
         var mes = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         var movsMes = Repositorios.Estoque.Todos().Where(m => m.Data >= mes).ToList();
         int baixos = ativos.Count(p => p.EstoqueBaixo);
@@ -129,7 +127,6 @@ class EstoquePage : UserControl, IPagina
     }
 }
 
-// ===== Janela de entrada / saída / ajuste de um produto =====
 class MovimentoDialog : Formulario
 {
     public MovimentoDialog(Produto p, string tipo)
@@ -160,7 +157,7 @@ class MovimentoDialog : Formulario
         AoSalvar = () =>
         {
             string motivo = cbMotivo?.SelectedItem as string ?? "Contagem / correção";
-            // Movimentar valida (quantidade, estoque suficiente) e lança InvalidOperationException com a mensagem
+
             Repositorios.Estoque.Movimentar(p.Id, tipo, (int)num.Value, motivo, txtObs.Text);
         };
     }

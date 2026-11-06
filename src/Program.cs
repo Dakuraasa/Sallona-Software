@@ -9,8 +9,6 @@ internal static class Program
     {
         ApplicationConfiguration.Initialize();
 
-        // 1) Tela de login primeiro  2) depois do login, o Dashboard com os dados daquela conta
-        // 3) se clicar em "Sair", volta para o login; se fechar a janela, encerra o programa
         while (true)
         {
             Usuario? usuario;
