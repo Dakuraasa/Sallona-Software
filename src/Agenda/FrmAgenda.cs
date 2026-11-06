@@ -194,8 +194,9 @@ public partial class FrmAgenda : Form
     {
         using var frm = new FrmNovoAgendamento(agendamentos);
 
-        // ShowDialog(this) = modal: a agenda fica travada até o formulário fechar
-        if (frm.ShowDialog(this) != DialogResult.OK || frm.Resultado == null) return;
+        // ShowDialog = modal: a agenda fica travada até o formulário fechar.
+        // TopLevelControl = a janela de verdade (o Dashboard, quando a agenda está encaixada nele)
+        if (frm.ShowDialog(TopLevelControl ?? this) != DialogResult.OK || frm.Resultado == null) return;
 
         agendamentos.Add(frm.Resultado);   // a partir daqui o horário passa a contar como ocupado
 
@@ -209,7 +210,7 @@ public partial class FrmAgenda : Form
                           && FiltrosAtuais.Aceita(frm.Resultado, frm.Resultado.Status);
         if (apareceNaTela) return;
 
-        MessageBox.Show(this,
+        MessageBox.Show(TopLevelControl ?? this,
             $"{frm.Resultado.Cliente}\n{frm.Resultado.DescricaoProcedimentos}\n" +
             $"{frm.Resultado.Data:dd/MM/yyyy} — {RegrasAgenda.Formatar(frm.Resultado.InicioMin)} " +
             $"às {RegrasAgenda.Formatar(frm.Resultado.FimMin)}",
